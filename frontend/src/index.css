@@ -1,0 +1,87 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* small custom styles */
+/* body { @apply bg-gray-50; } */
+
+:root {
+  --bg:        #0c0e12;
+  --surface:   #141821;
+  --surfaceHi: #1c2030;
+  --border:    #2a2f3d;
+  --text:      #c8cdd8;
+  --textDim:   #6b7280;
+  --amber:     #f59e0b;
+  --red:       #ef4444;
+  --green:     #22c55e;
+  --sky:       #38bdf8;
+  --violet:    #a78bfa;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Geist', 'SF Mono', system-ui, sans-serif;
+  margin: 0;
+}
+
+/* Scrollbar styling to match dark theme */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--surface); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--textDim); }
+
+/* Override CRA default white background */
+#root { min-height: 100vh; background: var(--bg); }
+
+code {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.88em;
+  background: #1c2030;
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: var(--sky);
+}
+
+/* ── Explainability module styles ── */
+/* Fonts for explainability components */
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Syne:wght@400;600;700;800&display=swap');
+
+.font-display { font-family: 'Syne', system-ui, sans-serif; }
+
+/* Fade-up animation used by explainability pages */
+.animate-fade-up {
+  animation: fadeUp 0.4s ease forwards;
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Card style used by ExplainUI components */
+.card {
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(167, 139, 250, 0.12);
+  border-radius: 12px;
+}
+.card:hover {
+  border-color: rgba(167, 139, 250, 0.28);
+  transition: border-color 0.2s;
+}
+.glow {
+  box-shadow: 0 0 40px rgba(167, 139, 250, 0.07);
+}
+
+/* Range input accent for explainability sliders */
+input[type=range] { accent-color: #a78bfa; }
+
+/* Drag-active state for ExplainDropZone */
+.drop-active {
+  border-color: rgba(167, 139, 250, 0.6) !important;
+  background: rgba(167, 139, 250, 0.04) !important;
+}
+
+

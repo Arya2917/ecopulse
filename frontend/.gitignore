@@ -1,0 +1,77 @@
+# ==============================
+# Node Modules
+# ==============================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ==============================
+# Environment Variables
+# ==============================
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# ==============================
+# Build / Production
+# ==============================
+build/
+dist/
+.next/
+out/
+
+# ==============================
+# Logs
+# ==============================
+logs/
+*.log
+
+# ==============================
+# OS Files
+# ==============================
+.DS_Store
+Thumbs.db
+
+# ==============================
+# IDE / Editor
+# ==============================
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ==============================
+# Coverage / Testing
+# ==============================
+coverage/
+.nyc_output/
+
+# ==============================
+# Cache / Temp
+# ==============================
+.cache/
+.tmp/
+.temp/
+
+# ==============================
+# Package Lock Files (optional)
+# ==============================
+# Uncomment if you don't want lock files
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml
+
+# ==============================
+# Docker
+# ==============================
+.dockerignore
+
+# ==============================
+# Misc
+# ==============================
+*.tgz
+*.bak
