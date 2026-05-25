@@ -2,6 +2,10 @@
 
 EcoPulse audits machine-learning models across four dimensions: **Fairness**, **Explainability**, **Compliance**, and **Energy**. It also offers bias mitigation and PII masking.
 
+Published Research:
+
+* Survey: https://pijet.org/papers/volume-3%20issue-1/Final%20Revised%20Paper_Pijet-10_Dec25.pdf
+
 The repo contains two independent folders:
 
 ```
