@@ -14,6 +14,9 @@ import HomePage        from "./pages/HomePage";
 import AuditPage       from "./pages/AuditPage";
 import MitigationPage  from "./pages/MitigationPage";
 import GlossaryPage    from "./pages/GlossaryPage";
+import AnalyticsPage   from "./pages/AnalyticsPage";
+  import MonitoringPage  from "./pages/MonitoringPage";
+
 import { ThemeProvider, useTheme } from "./theme";
 
 function AppContent() {
@@ -59,6 +62,15 @@ function AppContent() {
       {currentPage === "glossary" && (
         <GlossaryPage />
       )}
+
+      {currentPage === "analytics" && (
+        <AnalyticsPage />
+      )}
+
+        {currentPage === "monitoring" && (
+    <MonitoringPage />
+  )}
+ 
 
       {/* Mitigation overlay — rendered on top of AuditPage */}
       {showMitigation && (

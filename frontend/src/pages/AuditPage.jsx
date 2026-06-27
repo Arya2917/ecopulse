@@ -6,6 +6,7 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { useTheme } from "../theme";
 import { startAudit, getAuditStatus, getAuditResult, ackModule, getReportUrl, maskCsv } from "../utils/api";
+import { saveAuditToHistory } from "./HomePage";
 
 const MODULE_META = {
   fairness:       { label: "Fairness",        icon: "⚖",  colorKey: "amber"  },
@@ -481,59 +482,132 @@ function AllDonePanel({ jobId, modules, results, trustScore, csvFile, onOpenMiti
   );
 }
 
-// ── Timeline ───────────────────────────────────────────────────────────────────
+// ── Timeline (Animated Pipeline) ───────────────────────────────────────────────
 
 function Timeline({ modules, moduleStatus, currentModule, results, T }) {
   const getColor = (id) =>
     ({ fairness: T.amber, explainability: T.violet, compliance: T.green, energy: T.sky }[id] || T.textDim);
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
-      {modules.map((m, i) => {
-        const meta   = MODULE_META[m] || { label: m, icon: "●" };
-        const status = moduleStatus[m] || "queued";
-        const color  = getColor(m);
-        const isLast = i === modules.length - 1;
-        return (
-          <div key={m} style={{ display: "flex", gap: 14, paddingBottom: isLast ? 0 : 4 }}>
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: 28 }}>
+    <div>
+      {/* Horizontal animated pipeline strip */}
+      <div style={{
+        display: "flex", alignItems: "center",
+        marginBottom: 22, overflowX: "auto", paddingBottom: 4,
+      }}>
+        {modules.map((m, i) => {
+          const meta   = MODULE_META[m] || { label: m, icon: "●" };
+          const status = moduleStatus[m] || "queued";
+          const color  = getColor(m);
+          const isLast = i === modules.length - 1;
+          return (
+            <React.Fragment key={m}>
               <div style={{
-                width: 28, height: 28, borderRadius: "50%", flexShrink: 0,
-                background: status === "done" ? color+"33" : status === "running" ? color+"22" : status === "error" ? T.red+"22" : T.surfaceHi,
-                border: `2px solid ${status === "done" ? color : status === "running" ? color : status === "error" ? T.red : T.border}`,
-                display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: 13, transition: "all .3s",
+                flex: "0 0 auto", minWidth: 88,
+                display: "flex", flexDirection: "column", alignItems: "center", gap: 7,
+                padding: "10px 6px", borderRadius: 10, transition: "all .3s",
+                background: status === "running" ? color + "15"
+                  : status === "done" ? color + "0d" : "transparent",
+                border: `1.5px solid ${status === "running" ? color + "88"
+                  : status === "done" ? color + "55" : T.border}`,
+                boxShadow: status === "running" ? `0 0 18px ${color}33` : "none",
+                transform: status === "running" ? "translateY(-2px)" : "none",
               }}>
-                {status === "done" ? "✓" : status === "error" ? "✕" : status === "running" ? <Spinner color={color} size={12} /> : meta.icon}
-              </div>
-              {!isLast && <div style={{ flex: 1, width: 2, minHeight: 28, background: status === "done" ? color+"55" : T.border, transition: "background .5s" }} />}
-            </div>
-            <div style={{ flex: 1, paddingBottom: isLast ? 0 : 18, paddingTop: 4 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <div style={{ color: status === "queued" ? T.textDim : "#fff", fontWeight: 700, fontSize: 14 }}>{meta.label}</div>
                 <div style={{
-                  fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 8,
-                  background: status === "done" ? color+"22" : status === "running" ? color+"22" : status === "error" ? T.red+"22" : T.surfaceHi,
-                  color: status === "done" ? color : status === "running" ? color : status === "error" ? T.red : T.textDim,
+                  width: 36, height: 36, borderRadius: 9, flexShrink: 0,
+                  background: status === "done" ? color + "28" : status === "running" ? color + "22"
+                    : status === "error" ? T.red + "22" : T.surfaceHi,
+                  border: `2px solid ${status === "done" ? color : status === "running" ? color
+                    : status === "error" ? T.red : T.border}`,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 15, transition: "all .3s",
                 }}>
-                  {status === "queued" ? "Queued" : status === "running" ? "Running…" : status === "done" ? "Done" : "Error"}
+                  {status === "done" ? "✓" : status === "error" ? "✕"
+                    : status === "running" ? <Spinner color={color} size={14} /> : meta.icon}
                 </div>
+                <span style={{ color: status === "queued" ? T.textDim : "#fff",
+                  fontSize: 11, fontWeight: 700, textAlign: "center" }}>{meta.label}</span>
+                <span style={{
+                  fontSize: 9, fontWeight: 700, padding: "1px 6px", borderRadius: 5,
+                  background: status === "done" ? color + "22" : status === "running" ? color + "22"
+                    : status === "error" ? T.red + "22" : T.surfaceHi,
+                  color: status === "done" ? color : status === "running" ? color
+                    : status === "error" ? T.red : T.textDim,
+                }}>
+                  {status === "queued" ? "Queued" : status === "running" ? "Running…"
+                    : status === "done" ? "Done" : "Error"}
+                </span>
               </div>
-              {status === "running" && (
-                <div style={{ height: 3, background: T.border, borderRadius: 3, overflow: "hidden", marginTop: 8 }}>
-                  <div style={{ height: "100%", borderRadius: 3, background: color, animation: "ep-bar 1.4s ease-in-out infinite" }} />
+              {!isLast && (
+                <div style={{
+                  flex: "0 0 28px", height: 2, position: "relative", overflow: "hidden",
+                  background: moduleStatus[m] === "done"
+                    ? `linear-gradient(90deg, ${color}, ${getColor(modules[i + 1])})`
+                    : T.border,
+                  transition: "background .5s",
+                }}>
+                  {moduleStatus[m] === "running" && (
+                    <div style={{
+                      position: "absolute", top: -3, width: 8, height: 8,
+                      borderRadius: "50%", background: color,
+                      animation: "ep-dot 1.4s ease-in-out infinite",
+                      boxShadow: `0 0 8px ${color}`,
+                    }} />
+                  )}
                 </div>
               )}
-              {status === "done" && results?.[m] && !results[m].error && (
-                <div style={{ color: color, fontSize: 11, marginTop: 4 }}>Results captured ✓</div>
-              )}
-              {status === "error" && (
-                <div style={{ color: T.red, fontSize: 11, marginTop: 4 }}>{results?.[m]?.error?.slice(0, 60) || "Module failed"}</div>
-              )}
+            </React.Fragment>
+          );
+        })}
+      </div>
+
+      {/* Vertical detail list */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+        {modules.map((m, i) => {
+          const meta   = MODULE_META[m] || { label: m, icon: "●" };
+          const status = moduleStatus[m] || "queued";
+          const color  = getColor(m);
+          const isLast = i === modules.length - 1;
+          return (
+            <div key={m} style={{ display: "flex", gap: 14, paddingBottom: isLast ? 0 : 4 }}>
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: 28 }}>
+                <div style={{
+                  width: 28, height: 28, borderRadius: "50%", flexShrink: 0,
+                  background: status === "done" ? color+"33" : status === "running" ? color+"22"
+                    : status === "error" ? T.red+"22" : T.surfaceHi,
+                  border: `2px solid ${status === "done" ? color : status === "running" ? color
+                    : status === "error" ? T.red : T.border}`,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 13, transition: "all .3s",
+                }}>
+                  {status === "done" ? "✓" : status === "error" ? "✕"
+                    : status === "running" ? <Spinner color={color} size={12} /> : meta.icon}
+                </div>
+                {!isLast && <div style={{ flex: 1, width: 2, minHeight: 28,
+                  background: status === "done" ? color+"55" : T.border, transition: "background .5s" }} />}
+              </div>
+              <div style={{ flex: 1, paddingBottom: isLast ? 0 : 18, paddingTop: 4 }}>
+                <div style={{ color: status === "queued" ? T.textDim : "#fff", fontWeight: 700, fontSize: 14 }}>
+                  {meta.label}
+                </div>
+                {status === "running" && (
+                  <div style={{ height: 3, background: T.border, borderRadius: 3, overflow: "hidden", marginTop: 8 }}>
+                    <div style={{ height: "100%", borderRadius: 3, background: color, animation: "ep-bar 1.4s ease-in-out infinite" }} />
+                  </div>
+                )}
+                {status === "done" && results?.[m] && !results[m].error && (
+                  <div style={{ color: color, fontSize: 11, marginTop: 4 }}>Results captured ✓</div>
+                )}
+                {status === "error" && (
+                  <div style={{ color: T.red, fontSize: 11, marginTop: 4 }}>
+                    {results?.[m]?.error?.slice(0, 60) || "Module failed"}
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -611,9 +685,26 @@ const AuditPage = ({ auditParams, onBack, onOpenMitigation }) => {
   const handleContinue = useCallback(async () => {
     const isLast = !nextModuleAfter(justDoneMod);
     if (isLast) {
+      let ts = null;
       try {
         const res = await getAuditResult(jobId);
-        if (res.trust_score) setTrustScore(res.trust_score);
+        if (res.trust_score) {
+          setTrustScore(res.trust_score);
+          ts = res.trust_score;
+        }
+      } catch { /* non-fatal */ }
+      // Save to audit history
+      try {
+        saveAuditToHistory({
+          id:          jobId,
+          timestamp:   new Date().toISOString(),
+          modules,
+          csvName:     auditParams?.csvFile?.name || "dataset.csv",
+          trustScore:  ts?.score ?? null,
+          riskLevel:   ts?.risk_level ?? null,
+          riskColor:   ts?.risk_color ?? null,
+        });
+        window.dispatchEvent(new Event("ecopulse_history_updated"));
       } catch { /* non-fatal */ }
       setPhase("all_done");
       return;
@@ -621,7 +712,7 @@ const AuditPage = ({ auditParams, onBack, onOpenMitigation }) => {
     try { await ackModule(jobId); } catch { /* non-fatal */ }
     setJustDoneMod(null);
     setPhase("module_running");
-  }, [jobId, justDoneMod, modules]);
+  }, [jobId, justDoneMod, modules, auditParams]);
 
   return (
     <div style={{ maxWidth: 720, margin: "0 auto", padding: "32px 24px", fontFamily: T.font }}>
@@ -629,6 +720,7 @@ const AuditPage = ({ auditParams, onBack, onOpenMitigation }) => {
         @keyframes ep-spin { to { transform: rotate(360deg); } }
         @keyframes ep-bar  { 0% { width:0%; margin-left:0%; } 50% { width:60%; margin-left:20%; } 100% { width:0%; margin-left:100%; } }
         @keyframes ep-pop  { from { opacity:0; transform:scale(.94) translateY(10px); } to { opacity:1; transform:scale(1) translateY(0); } }
+        @keyframes ep-dot  { 0%,100% { left:-8px; opacity:0; } 10% { opacity:1; } 90% { opacity:1; } 95% { left:100%; opacity:0; } }
       `}</style>
 
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 30 }}>

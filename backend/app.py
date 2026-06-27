@@ -433,5 +433,309 @@ def mask_csv():
     )
 
 
+@app.route("/whatif/<job_id>", methods=["POST"])
+def whatif(job_id):
+    """
+    POST JSON { feature_values: { col: value, ... } }
+    Returns { prediction: 0|1, probability: float } using the job's saved model
+    or a freshly trained baseline on the original CSV.
+
+    The endpoint:
+      1. Loads the job's CSV path + target from params.
+      2. Builds a feature row from the supplied values (fills missing cols with
+         column medians/modes from the training data).
+      3. Uses the job's saved fairness model (if present) or trains a quick
+         RandomForest baseline to get a prediction.
+    """
+    job = JOBS.get(job_id)
+    if not job:
+        return jsonify({"error": "Job not found"}), 404
+
+    body = request.get_json(silent=True) or {}
+    feature_values = body.get("feature_values", {})
+
+    params = job.get("params", {})
+    csv_path = params.get("csv_path")
+    target   = params.get("target", "")
+
+    if not csv_path or not os.path.exists(csv_path):
+        return jsonify({"error": "Original CSV not available"}), 400
+    if not target:
+        return jsonify({"error": "No target column known for this job"}), 400
+
+    try:
+        df = pd.read_csv(csv_path)
+        feat_cols = [c for c in df.columns if c != target]
+
+        # Build input row — fill missing values with median/mode
+        row = {}
+        for col in feat_cols:
+            if col in feature_values:
+                try:
+                    row[col] = float(feature_values[col]) if pd.api.types.is_numeric_dtype(df[col]) else feature_values[col]
+                except (ValueError, TypeError):
+                    row[col] = feature_values[col]
+            else:
+                if pd.api.types.is_numeric_dtype(df[col]):
+                    row[col] = float(df[col].median())
+                else:
+                    row[col] = df[col].mode().iloc[0] if not df[col].mode().empty else ""
+
+        X_input = pd.DataFrame([row])[feat_cols]
+
+        # Try to use the fairness module's trained model if available
+        model = None
+        fairness_result = job.get("module_results", {}).get("fairness", {})
+
+        # Try job's uploaded model
+        model_path = params.get("model_path")
+        if model_path and os.path.exists(model_path):
+            try:
+                ext = os.path.splitext(model_path)[1].lower()
+                if ext in (".pkl", ".joblib"):
+                    model = joblib.load(model_path)
+            except Exception:
+                model = None
+
+        # Fall back: train a quick baseline
+        if model is None:
+            from sklearn.ensemble import RandomForestClassifier
+            from sklearn.preprocessing import OrdinalEncoder
+            from sklearn.pipeline import Pipeline
+            from sklearn.compose import ColumnTransformer
+
+            X_train = df[feat_cols].copy()
+            y_train = df[target]
+
+            cat_cols = X_train.select_dtypes(include=["object", "category"]).columns.tolist()
+            num_cols = X_train.select_dtypes(exclude=["object", "category"]).columns.tolist()
+
+            transformers = []
+            if cat_cols:
+                transformers.append(("cat", OrdinalEncoder(handle_unknown="use_encoded_value", unknown_value=-1), cat_cols))
+            if num_cols:
+                transformers.append(("num", "passthrough", num_cols))
+
+            ct = ColumnTransformer(transformers, remainder="drop")
+            model = Pipeline([("pre", ct), ("clf", RandomForestClassifier(n_estimators=50, random_state=42))])
+            model.fit(X_train, y_train)
+
+        # Align columns if model has feature_names_in_
+        if hasattr(model, "feature_names_in_"):
+            trained_feats = list(model.feature_names_in_)
+            for c in trained_feats:
+                if c not in X_input.columns:
+                    X_input[c] = 0
+            X_input = X_input[trained_feats]
+
+        prediction = int(model.predict(X_input)[0])
+        probability = None
+        if hasattr(model, "predict_proba"):
+            proba = model.predict_proba(X_input)[0]
+            # probability of positive class (last class)
+            probability = float(proba[-1])
+
+        return jsonify({
+            "prediction": prediction,
+            "probability": probability,
+            "feature_values": row,
+        })
+
+    except Exception as exc:
+        return jsonify({"error": str(exc)}), 500
+
+
+# ── Real-Time Monitoring endpoints ────────────────────────────────────────────
+# POST  /monitor/create           – seed a monitor from an audit job or manual baseline
+# POST  /monitor/ingest/<id>      – push a prediction batch
+# GET   /monitor/status/<id>      – current state, snapshots, alerts
+# GET   /monitor/list             – all monitors (summary)
+# POST  /monitor/pause/<id>       – pause monitoring
+# POST  /monitor/resume/<id>      – resume monitoring
+# DELETE /monitor/delete/<id>     – remove monitor
+
+from monitoring_store import MONITORS, persist as _persist_monitors
+from tasks.monitoring import create_monitor, ingest_batch
+
+
+@app.route("/monitor/create", methods=["POST"])
+def monitor_create():
+    """
+    POST JSON:
+    {
+      "name":                 "My Loan Model",         // required
+      "sensitive_col":        "gender",                // required
+      "target_col":           "approved",              // required
+      "baseline_group_rates": { "M": 0.72, "F": 0.65 }, // required
+      "dp_threshold":         0.1,                     // optional
+      "psi_warning":          0.1,                     // optional
+      "psi_critical":         0.25,                    // optional
+      "audit_job_id":         "<uuid>"                 // optional — auto-extract baseline
+    }
+
+    If audit_job_id is provided AND the audit job has fairness results,
+    the baseline_group_rates are extracted automatically.
+    """
+    body = request.get_json(silent=True) or {}
+
+    name          = body.get("name", "Unnamed Monitor")
+    sensitive_col = body.get("sensitive_col", "")
+    target_col    = body.get("target_col", "")
+
+    if not sensitive_col or not target_col:
+        return jsonify({"error": "sensitive_col and target_col are required"}), 400
+
+    # Auto-extract baseline — audit_job_id takes priority over manual JSON
+    baseline      = None
+    audit_job_id  = (body.get("audit_job_id") or "").strip()
+    manual_rates  = body.get("baseline_group_rates")
+
+    if audit_job_id:
+        job = JOBS.get(audit_job_id)
+        if not job:
+            return jsonify({
+                "error": (
+                    f"Audit job not found in memory. "
+                    "Flask restarts clear in-memory jobs — please re-run your audit "
+                    "in this session, then paste the new job ID."
+                )
+            }), 400
+        if job.get("status") != "done":
+            return jsonify({"error": "Audit job is not finished yet."}), 400
+        fairness_res = job.get("module_results", {}).get("fairness", {})
+        gm = fairness_res.get("by_group", {})
+        if not gm:
+            return jsonify({"error": "Audit job has no fairness results. Include Fairness module in the audit."}), 400
+        baseline = {}
+        for g, v in gm.items():
+            rate = v.get("Selection Rate", v.get("selection_rate", 0.5))
+            baseline[str(g)] = float(rate)
+    elif manual_rates:
+        if not isinstance(manual_rates, dict) or len(manual_rates) == 0:
+            return jsonify({
+    "error": 'baseline_group_rates must be a non-empty JSON object e.g. {"M": 0.72, "F": 0.65}'
+}), 400
+        baseline = {str(k): float(v) for k, v in manual_rates.items()}
+    else:
+        return jsonify({"error": "Provide either baseline_group_rates JSON or a completed audit_job_id."}), 400
+
+    monitor_id = create_monitor(
+        name=name,
+        sensitive_col=sensitive_col,
+        target_col=target_col,
+        baseline_group_rates=baseline,
+        dp_threshold=float(body.get("dp_threshold",  0.10)),
+        psi_warning= float(body.get("psi_warning",   0.10)),
+        psi_critical=float(body.get("psi_critical",  0.25)),
+    )
+    return jsonify({"monitor_id": monitor_id, "name": name})
+
+
+@app.route("/monitor/ingest/<monitor_id>", methods=["POST"])
+def monitor_ingest(monitor_id):
+    """
+    POST JSON:
+    {
+      "rows": [
+        { "sensitive": "M", "prediction": 1 },
+        { "sensitive": "F", "prediction": 0 },
+        ...
+      ]
+    }
+    Returns the snapshot produced by this batch.
+    """
+    body = request.get_json(silent=True) or {}
+    rows = body.get("rows", [])
+    if not rows:
+        return jsonify({"error": "rows array is required and must not be empty"}), 400
+    try:
+        snapshot = ingest_batch(monitor_id, rows)
+        return jsonify(snapshot)
+    except KeyError as exc:
+        return jsonify({"error": str(exc)}), 404
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
+    except Exception as exc:
+        return jsonify({"error": str(exc)}), 500
+
+
+@app.route("/monitor/status/<monitor_id>", methods=["GET"])
+def monitor_status(monitor_id):
+    """
+    Returns full monitor state: metadata, last 50 snapshots, last 50 alerts.
+    Query param ?snapshots=N to control how many snapshots to return (max 200).
+    """
+    mon = MONITORS.get(monitor_id)
+    if not mon:
+        return jsonify({"error": "Monitor not found"}), 404
+
+    n = min(int(request.args.get("snapshots", 50)), 200)
+    return jsonify({
+        "id":                   mon["id"],
+        "name":                 mon["name"],
+        "sensitive_col":        mon["sensitive_col"],
+        "target_col":           mon["target_col"],
+        "baseline_group_rates": mon["baseline_group_rates"],
+        "thresholds":           mon["thresholds"],
+        "created_at":           mon["created_at"],
+        "status":               mon["status"],
+        "total_snapshots":      len(mon["snapshots"]),
+        "total_alerts":         len(mon["alerts"]),
+        "snapshots":            mon["snapshots"][-n:],
+        "alerts":               mon["alerts"][-50:],
+    })
+
+
+@app.route("/monitor/list", methods=["GET"])
+def monitor_list():
+    """Returns summary of all monitors (no snapshots, just metadata + counts)."""
+    summaries = []
+    for mon in MONITORS.values():
+        last_snap = mon["snapshots"][-1] if mon["snapshots"] else None
+        summaries.append({
+            "id":              mon["id"],
+            "name":            mon["name"],
+            "sensitive_col":   mon["sensitive_col"],
+            "target_col":      mon["target_col"],
+            "status":          mon["status"],
+            "created_at":      mon["created_at"],
+            "total_snapshots": len(mon["snapshots"]),
+            "total_alerts":    len(mon["alerts"]),
+            "last_dp_gap":     last_snap["dp_gap"] if last_snap else None,
+            "last_snapshot_at": last_snap["timestamp"] if last_snap else None,
+        })
+    summaries.sort(key=lambda x: x["created_at"], reverse=True)
+    return jsonify(summaries)
+
+
+@app.route("/monitor/pause/<monitor_id>", methods=["POST"])
+def monitor_pause(monitor_id):
+    mon = MONITORS.get(monitor_id)
+    if not mon:
+        return jsonify({"error": "Monitor not found"}), 404
+    mon["status"] = "paused"
+    _persist_monitors()
+    return jsonify({"ok": True, "status": "paused"})
+
+
+@app.route("/monitor/resume/<monitor_id>", methods=["POST"])
+def monitor_resume(monitor_id):
+    mon = MONITORS.get(monitor_id)
+    if not mon:
+        return jsonify({"error": "Monitor not found"}), 404
+    mon["status"] = "active"
+    _persist_monitors()
+    return jsonify({"ok": True, "status": "active"})
+
+
+@app.route("/monitor/delete/<monitor_id>", methods=["DELETE"])
+def monitor_delete(monitor_id):
+    if monitor_id not in MONITORS:
+        return jsonify({"error": "Monitor not found"}), 404
+    del MONITORS[monitor_id]
+    _persist_monitors()
+    return jsonify({"ok": True})
+
+
 if __name__ == "__main__":
     app.run(debug=True, port=5000)

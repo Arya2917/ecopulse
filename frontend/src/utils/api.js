@@ -130,3 +130,64 @@ export const getResult = async (jobId) => {
   const res = await fetch(`${BASE}/result/${jobId}`);
   return res.json();
 };
+
+/**
+ * Run a What-If counterfactual prediction for a given job.
+ * @param {string} jobId
+ * @param {object} featureValues  { columnName: value, ... }
+ * @returns {Promise<{ prediction: number, probability: number|null, feature_values: object }>}
+ */
+export const runWhatIf = async (jobId, featureValues) => {
+  const res = await fetch(`${BASE}/whatif/${jobId}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ feature_values: featureValues }),
+  });
+  return res.json();
+};
+
+// ── Monitoring API ─────────────────────────────────────────────────
+
+
+export const createMonitor = async (payload) => {
+  const res = await fetch(`${BASE}/monitor/create`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  return res.json();
+};
+ 
+export const ingestBatch = async (monitorId, rows) => {
+  const res = await fetch(`${BASE}/monitor/ingest/${monitorId}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ rows }),
+  });
+  return res.json();
+};
+ 
+export const getMonitorStatus = async (monitorId, snapshots = 50) => {
+  const res = await fetch(`${BASE}/monitor/status/${monitorId}?snapshots=${snapshots}`);
+  return res.json();
+};
+ 
+export const listMonitors = async () => {
+  const res = await fetch(`${BASE}/monitor/list`);
+  return res.json();
+};
+ 
+export const pauseMonitor = async (monitorId) => {
+  const res = await fetch(`${BASE}/monitor/pause/${monitorId}`, { method: "POST" });
+  return res.json();
+};
+ 
+export const resumeMonitor = async (monitorId) => {
+  const res = await fetch(`${BASE}/monitor/resume/${monitorId}`, { method: "POST" });
+  return res.json();
+};
+ 
+export const deleteMonitor = async (monitorId) => {
+  const res = await fetch(`${BASE}/monitor/delete/${monitorId}`, { method: "DELETE" });
+  return res.json();
+};

@@ -3,8 +3,10 @@ import React from "react";
 import { useTheme } from "../theme";
 
 const NAV_LINKS = [
-  { label: "Home",     page: "home"     },
-  { label: "Glossary", page: "glossary" },
+  { label: "Home",       page: "home",       icon: "🏠" },
+  { label: "Analytics",  page: "analytics",  icon: "📊" },
+  { label: "Monitoring", page: "monitoring", icon: "📡", badge: "NEW" },
+  { label: "Glossary",   page: "glossary",   icon: "📖" },
 ];
 
 const Navbar = ({ currentPage, onNavigate }) => {
@@ -48,7 +50,7 @@ const Navbar = ({ currentPage, onNavigate }) => {
 
         {/* Nav links + theme toggle */}
         <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-          {NAV_LINKS.map(({ label, page }) => {
+          {NAV_LINKS.map(({ label, page, icon, badge }) => {
             const active = currentPage === page;
             return (
               <button
@@ -57,15 +59,23 @@ const Navbar = ({ currentPage, onNavigate }) => {
                 style={{
                   color: active ? "#fff" : T.textDim,
                   fontSize: 13, fontWeight: 600,
-                  padding: "5px 11px", borderRadius: 6,
+                  padding: "5px 12px", borderRadius: 6,
                   background: active ? T.surfaceHi : "transparent",
                   border: active ? `1px solid ${T.border}` : "1px solid transparent",
                   cursor: "pointer", fontFamily: T.font, transition: "all .15s",
+                  display: "flex", alignItems: "center", gap: 5,
                 }}
-                onMouseEnter={e => { if (!active) { e.target.style.color = T.text; e.target.style.background = T.surfaceHi; }}}
-                onMouseLeave={e => { if (!active) { e.target.style.color = T.textDim; e.target.style.background = "transparent"; }}}
+                onMouseEnter={e => { if (!active) { e.currentTarget.style.color = T.text; e.currentTarget.style.background = T.surfaceHi; }}}
+                onMouseLeave={e => { if (!active) { e.currentTarget.style.color = T.textDim; e.currentTarget.style.background = "transparent"; }}}
               >
+                <span style={{ fontSize: 12 }}>{icon}</span>
                 {label}
+                {badge && (
+                  <span style={{
+                    fontSize: 9, fontWeight: 800, padding: "1px 5px", borderRadius: 4,
+                    background: T.amber + "33", color: T.amber, letterSpacing: "0.04em",
+                  }}>{badge}</span>
+                )}
               </button>
             );
           })}

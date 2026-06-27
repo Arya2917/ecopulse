@@ -2,18 +2,41 @@
 // ═══════════════════════════════════════════════════════════════════════════════
 // Unified launch dashboard.
 //
-// Layout:
-//   1. Module selector cards (fairness / explainability / compliance / energy)
-//   2. File upload zone  (CSV required, model .pkl optional)
-//   3. Column config     (target + sensitive — appear when fairness or explainability selected)
-//   4. Advanced options  (thresholds — collapsible)
-//   5. "Run Audit" button
+// NEW in this version:
+//   • CSV Preview Panel — after upload, shows row count, column stats,
+//     missing values, data types, and a 5-row sample table.
+//   • Audit History — completed audits saved to localStorage, shown in a
+//     collapsible "Past Audits" section on the home page with trust score
+//     and module badges. Clicking a past audit re-populates the form.
 // ═══════════════════════════════════════════════════════════════════════════════
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useTheme } from "../theme";
 
-// ── Helpers ────────────────────────────────────────────────────────────────────
+// ── LocalStorage helpers ───────────────────────────────────────────────────────
+
+const HISTORY_KEY = "ecopulse_audit_history";
+
+export function saveAuditToHistory(entry) {
+  // entry: { id, timestamp, modules, trustScore, riskLevel, riskColor, csvName, moduleStatuses }
+  try {
+    const existing = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
+    const updated  = [entry, ...existing].slice(0, 20); // keep last 20
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(updated));
+  } catch { /* localStorage might be unavailable */ }
+}
+
+export function loadAuditHistory() {
+  try {
+    return JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
+  } catch { return []; }
+}
+
+export function clearAuditHistory() {
+  try { localStorage.removeItem(HISTORY_KEY); } catch { }
+}
+
+// ── CSV parser helpers ─────────────────────────────────────────────────────────
 
 function readCSVHeaders(file) {
   return new Promise((resolve, reject) => {
@@ -21,6 +44,58 @@ function readCSVHeaders(file) {
     reader.onload = (e) => {
       const first = e.target.result.split(/\r?\n/)[0];
       resolve(first.split(",").map(h => h.trim().replace(/^["']|["']$/g, "")));
+    };
+    reader.onerror = reject;
+    reader.readAsText(file);
+  });
+}
+
+function parseCSVPreview(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const lines = e.target.result.split(/\r?\n/).filter(l => l.trim());
+      if (lines.length < 2) { resolve(null); return; }
+
+      const headers = lines[0].split(",").map(h => h.trim().replace(/^["']|["']$/g, ""));
+      const rows    = lines.slice(1, 6).map(line => {  // first 5 data rows
+        const vals = line.split(",").map(v => v.trim().replace(/^["']|["']$/g, ""));
+        const obj  = {};
+        headers.forEach((h, i) => { obj[h] = vals[i] ?? ""; });
+        return obj;
+      });
+
+      // Stats per column from all rows (up to 500 for speed)
+      const allRows = lines.slice(1, 501).map(line =>
+        line.split(",").map(v => v.trim().replace(/^["']|["']$/g, ""))
+      );
+
+      const colStats = headers.map((h, ci) => {
+        const vals    = allRows.map(r => r[ci] ?? "").filter(v => v !== "");
+        const missing = allRows.length - vals.length;
+        const nums    = vals.map(Number).filter(v => !isNaN(v));
+        const isNum   = nums.length > vals.length * 0.8;
+        let   dtype   = isNum ? "numeric" : "categorical";
+        let   info    = "";
+        if (isNum && nums.length > 0) {
+          const mn  = Math.min(...nums);
+          const mx  = Math.max(...nums);
+          const avg = nums.reduce((a, b) => a + b, 0) / nums.length;
+          info = `min ${mn.toFixed(2)}, max ${mx.toFixed(2)}, mean ${avg.toFixed(2)}`;
+        } else {
+          const uniq = new Set(vals).size;
+          info = `${uniq} unique value${uniq !== 1 ? "s" : ""}`;
+        }
+        return { name: h, dtype, missing, info };
+      });
+
+      resolve({
+        numRows:   lines.length - 1,
+        numCols:   headers.length,
+        headers,
+        sampleRows: rows,
+        colStats,
+      });
     };
     reader.onerror = reject;
     reader.readAsText(file);
@@ -42,7 +117,6 @@ function ModuleCard({ module, selected, onToggle, T }) {
       onMouseEnter={e => { if (!selected) e.currentTarget.style.borderColor = module.color + "88"; }}
       onMouseLeave={e => { if (!selected) e.currentTarget.style.borderColor = T.border; }}
     >
-      {/* Checkbox */}
       <div style={{
         position: "absolute", top: 14, left: 14,
         width: 16, height: 16, borderRadius: 4,
@@ -52,7 +126,6 @@ function ModuleCard({ module, selected, onToggle, T }) {
       }}>
         {selected && <span style={{ color: "#000", fontSize: 10, fontWeight: 900 }}>✓</span>}
       </div>
-
       <div style={{ marginLeft: 26 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 6 }}>
           <span style={{ fontSize: 18 }}>{module.icon}</span>
@@ -85,9 +158,7 @@ function ModuleCard({ module, selected, onToggle, T }) {
 function DropZone({ label, accept, file, onFile, hint, T }) {
   const ref = useRef();
   const [drag, setDrag] = useState(false);
-
   const handle = (f) => { if (f) onFile(f); };
-
   return (
     <div
       onClick={() => ref.current.click()}
@@ -148,6 +219,276 @@ function ColSelect({ label, value, onChange, columns, placeholder, T }) {
   );
 }
 
+// ── CSV Preview Panel ──────────────────────────────────────────────────────────
+
+function CSVPreviewPanel({ preview, T }) {
+  const [showSample, setShowSample] = useState(false);
+  if (!preview) return null;
+
+  const totalMissing = preview.colStats.reduce((s, c) => s + c.missing, 0);
+
+  return (
+    <div style={{
+      background: T.surface, border: `1px solid ${T.border}`,
+      borderRadius: 12, padding: "18px 20px", marginTop: 14,
+    }}>
+      {/* Top stats row */}
+      <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 14 }}>
+        {[
+          { label: "Rows",    value: preview.numRows.toLocaleString(), color: T.sky   },
+          { label: "Columns", value: preview.numCols,                  color: T.violet },
+          { label: "Missing", value: totalMissing > 0 ? totalMissing : "None",
+            color: totalMissing > 0 ? T.amber : T.green },
+          { label: "Numeric cols",
+            value: preview.colStats.filter(c => c.dtype === "numeric").length,
+            color: T.sky },
+          { label: "Categorical cols",
+            value: preview.colStats.filter(c => c.dtype === "categorical").length,
+            color: T.violet },
+        ].map(s => (
+          <div key={s.label} style={{
+            background: T.surfaceHi, border: `1px solid ${T.border}`,
+            borderRadius: 8, padding: "8px 14px", flex: 1, minWidth: 90,
+          }}>
+            <div style={{ color: T.textDim, fontSize: 10, fontWeight: 700,
+              textTransform: "uppercase", letterSpacing: "0.05em" }}>{s.label}</div>
+            <div style={{ color: s.color, fontSize: 18, fontWeight: 900, marginTop: 2 }}>{s.value}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Column stats */}
+      <div style={{ marginBottom: 12 }}>
+        <div style={{ color: T.textDim, fontSize: 10, fontWeight: 700,
+          textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>
+          Column Overview
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+          {preview.colStats.map(col => (
+            <div key={col.name} style={{
+              display: "flex", alignItems: "center", gap: 10,
+              padding: "6px 10px", borderRadius: 6, background: T.surfaceHi,
+            }}>
+              <span style={{
+                fontSize: 9, fontWeight: 700, padding: "2px 6px", borderRadius: 4,
+                background: col.dtype === "numeric" ? T.skyDim : T.violetDim,
+                color: col.dtype === "numeric" ? T.sky : T.violet,
+                flexShrink: 0, width: 68, textAlign: "center",
+              }}>
+                {col.dtype}
+              </span>
+              <span style={{ color: "#fff", fontSize: 12, fontWeight: 600, minWidth: 100, flexShrink: 0 }}>
+                {col.name}
+              </span>
+              <span style={{ color: T.textDim, fontSize: 11, flex: 1 }}>{col.info}</span>
+              {col.missing > 0 && (
+                <span style={{ fontSize: 10, color: T.amber, fontWeight: 700, flexShrink: 0 }}>
+                  {col.missing} missing
+                </span>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Sample rows toggle */}
+      <button
+        onClick={() => setShowSample(v => !v)}
+        style={{
+          background: "none", border: `1px solid ${T.border}`, borderRadius: 6,
+          color: T.textDim, fontSize: 11, padding: "5px 12px", cursor: "pointer",
+          fontFamily: "inherit",
+        }}
+      >
+        {showSample ? "▲ Hide" : "▼ Show"} sample rows (first 5)
+      </button>
+
+      {showSample && (
+        <div style={{ marginTop: 12, overflowX: "auto" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 11 }}>
+            <thead>
+              <tr>
+                {preview.headers.map(h => (
+                  <th key={h} style={{
+                    padding: "6px 10px", borderBottom: `1px solid ${T.border}`,
+                    color: T.textDim, fontWeight: 700, textAlign: "left",
+                    textTransform: "uppercase", letterSpacing: "0.04em", whiteSpace: "nowrap",
+                  }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {preview.sampleRows.map((row, i) => (
+                <tr key={i} style={{ background: i % 2 === 0 ? T.surfaceHi : "transparent" }}>
+                  {preview.headers.map(h => (
+                    <td key={h} style={{
+                      padding: "5px 10px", color: T.text, fontSize: 11,
+                      fontFamily: "monospace", whiteSpace: "nowrap",
+                      borderBottom: `1px solid ${T.border}`,
+                    }}>
+                      {row[h] ?? ""}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Audit History Panel ────────────────────────────────────────────────────────
+
+const MODULE_COLORS = {
+  fairness:       "#f59e0b",
+  explainability: "#a78bfa",
+  compliance:     "#22c55e",
+  energy:         "#38bdf8",
+};
+
+const MODULE_ICONS = {
+  fairness: "⚖", explainability: "🔍", compliance: "🛡", energy: "⚡",
+};
+
+function AuditHistoryPanel({ T, onRerun }) {
+  const [history,    setHistory]    = useState([]);
+  const [collapsed,  setCollapsed]  = useState(false);
+
+  useEffect(() => {
+    setHistory(loadAuditHistory());
+    // Refresh when localStorage changes from another tab / audit completion
+    const handler = () => setHistory(loadAuditHistory());
+    window.addEventListener("ecopulse_history_updated", handler);
+    return () => window.removeEventListener("ecopulse_history_updated", handler);
+  }, []);
+
+  if (history.length === 0) return null;
+
+  const riskColor = (rc) =>
+    ({ green: T.green, amber: T.amber, red: T.red }[rc] || T.textDim);
+
+  const handleClear = () => {
+    clearAuditHistory();
+    setHistory([]);
+  };
+
+  return (
+    <div style={{
+      background: T.surface, border: `1px solid ${T.border}`,
+      borderRadius: 12, padding: "18px 20px", marginBottom: 20,
+    }}>
+      {/* Header */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: collapsed ? 0 : 14 }}>
+        <button
+          onClick={() => setCollapsed(v => !v)}
+          style={{
+            background: "none", border: "none", cursor: "pointer", padding: 0,
+            color: T.textDim, fontSize: 11, fontWeight: 700,
+            textTransform: "uppercase", letterSpacing: "0.06em",
+            display: "flex", alignItems: "center", gap: 8, fontFamily: T.font,
+          }}
+        >
+          <span style={{
+            transform: collapsed ? "none" : "rotate(90deg)",
+            transition: "transform .2s", display: "inline-block",
+          }}>▶</span>
+          Past Audits ({history.length})
+        </button>
+        {!collapsed && (
+          <button
+            onClick={handleClear}
+            style={{
+              background: "none", border: `1px solid ${T.border}`,
+              borderRadius: 5, color: T.textDim, fontSize: 11,
+              padding: "3px 10px", cursor: "pointer", fontFamily: T.font,
+            }}
+          >Clear all</button>
+        )}
+      </div>
+
+      {!collapsed && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          {history.map((entry) => {
+            const rc = riskColor(entry.riskColor);
+            return (
+              <div key={entry.id} style={{
+                background: T.surfaceHi, border: `1px solid ${T.border}`,
+                borderRadius: 9, padding: "12px 14px",
+                display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap",
+              }}>
+                {/* Trust score ring (tiny) */}
+                {entry.trustScore != null && (
+                  <div style={{
+                    width: 44, height: 44, borderRadius: "50%", flexShrink: 0,
+                    background: rc + "22", border: `2px solid ${rc}`,
+                    display: "flex", flexDirection: "column",
+                    alignItems: "center", justifyContent: "center",
+                  }}>
+                    <span style={{ color: rc, fontSize: 12, fontWeight: 900, lineHeight: 1 }}>
+                      {entry.trustScore.toFixed(0)}
+                    </span>
+                    <span style={{ color: T.textDim, fontSize: 8 }}>/ 100</span>
+                  </div>
+                )}
+
+                {/* Info */}
+                <div style={{ flex: 1, minWidth: 160 }}>
+                  <div style={{ color: "#fff", fontSize: 12, fontWeight: 700 }}>
+                    {entry.csvName || "audit"}
+                  </div>
+                  <div style={{ color: T.textDim, fontSize: 10, marginTop: 2 }}>
+                    {new Date(entry.timestamp).toLocaleString()}
+                  </div>
+                  {/* Module badges */}
+                  <div style={{ display: "flex", gap: 5, marginTop: 6, flexWrap: "wrap" }}>
+                    {(entry.modules || []).map(m => (
+                      <span key={m} style={{
+                        fontSize: 9, padding: "2px 7px", borderRadius: 6, fontWeight: 700,
+                        background: (MODULE_COLORS[m] || "#6b7280") + "22",
+                        color: MODULE_COLORS[m] || "#6b7280",
+                        border: `1px solid ${(MODULE_COLORS[m] || "#6b7280")}44`,
+                      }}>
+                        {MODULE_ICONS[m]} {m}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Risk badge */}
+                {entry.riskLevel && (
+                  <span style={{
+                    fontSize: 10, fontWeight: 800, padding: "3px 10px",
+                    borderRadius: 12, background: rc + "22",
+                    color: rc, border: `1px solid ${rc}44`, flexShrink: 0,
+                  }}>
+                    {entry.riskLevel}
+                  </span>
+                )}
+
+                {/* Re-run button */}
+                {onRerun && (
+                  <button
+                    onClick={() => onRerun(entry)}
+                    style={{
+                      padding: "6px 12px", borderRadius: 7, border: `1px solid ${T.border}`,
+                      background: T.surface, color: T.textDim, fontSize: 11,
+                      cursor: "pointer", fontFamily: T.font, flexShrink: 0,
+                    }}
+                  >
+                    ↺ Re-run
+                  </button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Main Component ─────────────────────────────────────────────────────────────
 
 const HomePage = ({ onStartAudit }) => {
@@ -184,6 +525,8 @@ const HomePage = ({ onStartAudit }) => {
   const [csvFile,     setCsvFile]     = useState(null);
   const [modelFile,   setModelFile]   = useState(null);
   const [csvHeaders,  setCsvHeaders]  = useState([]);
+  const [csvPreview,  setCsvPreview]  = useState(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
   const [target,      setTarget]      = useState("");
   const [sensitive,   setSensitive]   = useState("");
   const [epochs,      setEpochs]      = useState(1);
@@ -204,6 +547,7 @@ const HomePage = ({ onStartAudit }) => {
 
   const handleCsvFile = async (file) => {
     setCsvFile(file);
+    setCsvPreview(null);
     setTarget("");
     setSensitive("");
     if (file) {
@@ -213,9 +557,24 @@ const HomePage = ({ onStartAudit }) => {
       } catch {
         setCsvHeaders([]);
       }
+      // Parse preview stats
+      setPreviewLoading(true);
+      try {
+        const preview = await parseCSVPreview(file);
+        setCsvPreview(preview);
+      } catch {
+        setCsvPreview(null);
+      } finally {
+        setPreviewLoading(false);
+      }
     } else {
       setCsvHeaders([]);
     }
+  };
+
+  // Handle re-run from history (just pre-select modules; can't restore file)
+  const handleRerun = (entry) => {
+    if (entry.modules) setSelected(entry.modules);
   };
 
   const validate = () => {
@@ -245,7 +604,6 @@ const HomePage = ({ onStartAudit }) => {
     });
   };
 
-  // ── Styles ────────────────────────────────────────────────────────────────
   const sectionHead = {
     color: T.textDim, fontSize: 11, fontWeight: 700,
     textTransform: "uppercase", letterSpacing: "0.08em",
@@ -272,6 +630,9 @@ const HomePage = ({ onStartAudit }) => {
           a full sequential analysis — fairness, explainability, compliance, and energy.
         </p>
       </div>
+
+      {/* ── Past Audits ────────────────────────────────────────────────────── */}
+      <AuditHistoryPanel T={T} onRerun={handleRerun} />
 
       {/* ── Step 1: Select Modules ─────────────────────────────────────────── */}
       <div style={card}>
@@ -309,6 +670,11 @@ const HomePage = ({ onStartAudit }) => {
               hint="Required for all modules"
               T={T}
             />
+            {previewLoading && (
+              <div style={{ color: T.textDim, fontSize: 11, marginTop: 8 }}>
+                ⏳ Parsing dataset…
+              </div>
+            )}
           </div>
           <div>
             <div style={{ color: T.text, fontSize: 12, fontWeight: 600, marginBottom: 6 }}>
@@ -324,6 +690,9 @@ const HomePage = ({ onStartAudit }) => {
             />
           </div>
         </div>
+
+        {/* CSV Preview Panel */}
+        <CSVPreviewPanel preview={csvPreview} T={T} />
       </div>
 
       {/* ── Step 3: Column Configuration ──────────────────────────────────── */}
@@ -370,7 +739,6 @@ const HomePage = ({ onStartAudit }) => {
             )}
           </div>
 
-          {/* Prediction source option (when no model) */}
           {!modelFile && needsTarget && (
             <div style={{ marginTop: 14, display: "flex", alignItems: "center", gap: 10 }}>
               <input
@@ -388,7 +756,7 @@ const HomePage = ({ onStartAudit }) => {
         </div>
       )}
 
-      {/* ── Advanced Options (collapsible) ────────────────────────────────── */}
+      {/* ── Advanced Options ───────────────────────────────────────────────── */}
       <div style={card}>
         <button
           onClick={() => setShowAdv(v => !v)}
