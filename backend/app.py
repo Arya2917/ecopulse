@@ -87,11 +87,24 @@ def _sequential_worker(job_id: str):
         # ── Run the module ──────────────────────────────────────────────────
         try:
             result = MODULE_RUNNERS[module_name](**job["params"])
+
+            # Generate AI Sustainability Advisor
+            if module_name == "energy":
+                try:
+                    result["ai_summary"] = analyze_energy(result)
+                except Exception as e:
+                    result["ai_summary"] = (
+                        f"Unable to generate AI Sustainability Advisor: {str(e)}"
+                    )
+
             job["module_results"][module_name] = result
-            job["module_status"][module_name]  = "done"
+            job["module_status"][module_name] = "done"
+
         except Exception as exc:
-            job["module_results"][module_name] = {"error": str(exc)}
-            job["module_status"][module_name]  = "error"
+            job["module_results"][module_name] = {
+                "error": str(exc)
+            }
+            job["module_status"][module_name] = "error"
 
         # ── Pause and wait for frontend ACK (unless this is the last module) ─
         is_last = (i == len(ordered) - 1)
@@ -794,6 +807,7 @@ def monitor_delete(monitor_id):
 from services.fairness_ai      import analyze_fairness
 from services.explainability_ai import analyze_explainability
 from services.compliance_ai    import analyze_compliance
+from services.energy_ai import analyze_energy
 from services.ollama_service   import is_available as ollama_is_available
 from monitoring_store          import MONITORS
 
@@ -864,6 +878,40 @@ def ai_compliance(job_id):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+
+@app.route("/ai/energy/<job_id>", methods=["POST"])
+def ai_energy(job_id):
+
+    try:
+
+        job = JOBS.get(job_id)
+
+        if not job:
+            return jsonify({"error": "Job not found"}), 404
+
+        energy = job["module_results"].get("energy")
+
+        if not energy:
+            return jsonify({"error": "Energy results unavailable"}), 404
+
+        result = analyze_energy(energy)
+
+        result["job_id"] = job_id
+
+        return jsonify(result)
+
+    except RuntimeError as e:
+
+        return jsonify({
+            "error": str(e),
+            "hint": "Is Ollama running?"
+        }), 503
+
+    except Exception as e:
+
+        return jsonify({
+            "error": str(e)
+        }), 500
 
 if __name__ == "__main__":
     app.run(debug=True, port=5000)

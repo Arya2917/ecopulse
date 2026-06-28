@@ -244,3 +244,13 @@ export const getAIComplianceInsight = async (jobId) => {
   const res = await fetch(`${BASE}/ai/compliance/${jobId}`, { method: "POST" });
   return res.json();
 };
+
+export async function getAIEnergyInsight(jobId) {
+    const res = await fetch(
+        `${BASE}/ai/energy/${jobId}`,
+        {
+            method: "POST",
+        }
+    );
+    return res.json();
+}

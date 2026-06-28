@@ -481,7 +481,7 @@ function AllDonePanel({ jobId, modules, results, trustScore, csvFile, onOpenMiti
       )}
 
       {/* AI Governance Copilot */}
-      {(hasFairness || hasCompliance || modules.includes("explainability")) && (
+      {(hasFairness || hasCompliance || modules.includes("explainability") || modules.includes("energy")) && (
         <div style={{
           background: T.surface, border: `1px solid ${T.border}`,
           borderRadius: 14, padding: "22px 24px", marginTop: 8,
@@ -511,6 +511,9 @@ function AllDonePanel({ jobId, modules, results, trustScore, csvFile, onOpenMiti
           {hasCompliance && (
             <AIInsightCard jobId={jobId} type="compliance" T={T} />
           )}
+          {modules.includes("energy") && results?.energy && !results.energy.error && (
+            <AIInsightCard jobId={jobId} type="energy" T={T} />
+        )}
         </div>
       )}
     </div>

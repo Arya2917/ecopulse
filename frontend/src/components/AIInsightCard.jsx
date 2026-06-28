@@ -17,6 +17,7 @@ import {
   getAIFairnessInsight,
   getAIExplainabilityInsight,
   getAIComplianceInsight,
+  getAIEnergyInsight,
 } from "../utils/api";
 
 // ── Config per type ────────────────────────────────────────────────────────────
@@ -67,6 +68,21 @@ const TYPE_CONFIG = {
       { key: "legal_implications", title: "Legal Implications"    },
       { key: "recommendations",    title: "Recommended Actions"   },
       { key: "roadmap",            title: "Compliance Roadmap"    },
+    ],
+  },
+  energy: {
+    label:       "AI Sustainability Advisor",
+    buttonLabel: "🤖 Explain This Energy Report",
+    icon:        "🌱",
+    colorKey:    "green",
+    fetcher:     getAIEnergyInsight,
+
+    sections: [
+      { key: "summary",         title: "Executive Summary" },
+      { key: "rating",          title: "Sustainability Rating" },
+      { key: "environment",     title: "Environmental Impact" },
+      { key: "findings",        title: "Key Findings" },
+      { key: "recommendations", title: "Recommendations" },
     ],
   },
 };
