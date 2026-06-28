@@ -23,6 +23,7 @@ The repo contains two independent folders:
 | Python | 3.10+ |
 | Node.js | 18+ |
 | npm | 9+ |
+| Ollama | Latest |
 
 ---
 
@@ -70,6 +71,34 @@ The API will start on **http://127.0.0.1:5000**.
 
 > **Tip:** The server must be running before you launch the frontend.
 
+### 1.5 — Install Ollama (Required for AI Copilot) - Optional
+
+Download and install Ollama:
+
+```bash
+# Paste this in Powershell
+irm https://ollama.com/install.ps1 | iex
+```
+
+Verify installation:
+
+```bash
+ollama --version
+```
+
+Pull the required model:
+
+```bash
+ollama pull llama3
+```
+
+If the Ollama server is not already running:
+
+```bash
+ollama serve
+```
+
+The AI Copilot automatically connects to Ollama
 ---
 
 ## 2 · Frontend Setup
