@@ -31,7 +31,7 @@ The repo contains two independent folders:
 ### 1.1 — Clone & navigate
 
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/Arya2917/ecopulse
 cd backend
 ```
 
