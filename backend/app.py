@@ -612,7 +612,7 @@ def monitor_create():
             baseline[str(g)] = float(rate)
     elif manual_rates:
         if not isinstance(manual_rates, dict) or len(manual_rates) == 0:
-            return jsonify({
+          return jsonify({
     "error": 'baseline_group_rates must be a non-empty JSON object e.g. {"M": 0.72, "F": 0.65}'
 }), 400
         baseline = {str(k): float(v) for k, v in manual_rates.items()}
@@ -735,6 +735,86 @@ def monitor_delete(monitor_id):
     del MONITORS[monitor_id]
     _persist_monitors()
     return jsonify({"ok": True})
+
+
+# ── AI Governance Copilot endpoints ───────────────────────────────────────────
+# POST /ai/fairness/<job_id>      — AI Fairness Consultant
+# POST /ai/explainability/<job_id> — AI Explainability Narrator
+# POST /ai/compliance/<job_id>    — AI Compliance Advisor
+# GET  /ai/health                 — Ollama availability check
+
+from services.fairness_ai      import analyze_fairness
+from services.explainability_ai import analyze_explainability
+from services.compliance_ai    import analyze_compliance
+from services.ollama_service   import is_available as ollama_is_available
+from monitoring_store          import MONITORS
+
+
+@app.route("/ai/health", methods=["GET"])
+def ai_health():
+    """Check if Ollama is reachable and llama3 is available."""
+    ok = ollama_is_available()
+    return jsonify({"ollama_available": ok,
+                    "model": "llama3",
+                    "status": "ready" if ok else "unavailable"})
+
+
+@app.route("/ai/fairness/<job_id>", methods=["POST"])
+def ai_fairness(job_id):
+    """
+    AI Fairness Consultant.
+    Reads fairness results from JOBS[job_id] automatically — no body required.
+    Optionally enriches with monitoring drift history.
+    """
+    try:
+        result = analyze_fairness(job_id, JOBS, MONITORS)
+        return jsonify(result)
+    except KeyError as e:
+        return jsonify({"error": str(e)}), 404
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    except RuntimeError as e:
+        return jsonify({"error": str(e), "hint": "Is Ollama running? Run: ollama serve"}), 503
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/ai/explainability/<job_id>", methods=["POST"])
+def ai_explainability(job_id):
+    """
+    AI Explainability Narrator.
+    Reads SHAP + LIME results from JOBS[job_id] automatically.
+    """
+    try:
+        result = analyze_explainability(job_id, JOBS)
+        return jsonify(result)
+    except KeyError as e:
+        return jsonify({"error": str(e)}), 404
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    except RuntimeError as e:
+        return jsonify({"error": str(e), "hint": "Is Ollama running? Run: ollama serve"}), 503
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/ai/compliance/<job_id>", methods=["POST"])
+def ai_compliance(job_id):
+    """
+    AI Compliance Advisor.
+    Reads compliance scan results from JOBS[job_id] automatically.
+    """
+    try:
+        result = analyze_compliance(job_id, JOBS)
+        return jsonify(result)
+    except KeyError as e:
+        return jsonify({"error": str(e)}), 404
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    except RuntimeError as e:
+        return jsonify({"error": str(e), "hint": "Is Ollama running? Run: ollama serve"}), 503
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 if __name__ == "__main__":

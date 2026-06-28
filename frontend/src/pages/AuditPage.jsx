@@ -6,6 +6,7 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { useTheme } from "../theme";
 import { startAudit, getAuditStatus, getAuditResult, ackModule, getReportUrl, maskCsv } from "../utils/api";
+import AIInsightCard from "../components/AIInsightCard";
 import { saveAuditToHistory } from "./HomePage";
 
 const MODULE_META = {
@@ -477,6 +478,40 @@ function AllDonePanel({ jobId, modules, results, trustScore, csvFile, onOpenMiti
       {/* PII Masking */}
       {hasCompliance && (
         <DataMaskingPanel complianceData={results.compliance} csvFile={csvFile} T={T} />
+      )}
+
+      {/* AI Governance Copilot */}
+      {(hasFairness || hasCompliance || modules.includes("explainability")) && (
+        <div style={{
+          background: T.surface, border: `1px solid ${T.border}`,
+          borderRadius: 14, padding: "22px 24px", marginTop: 8,
+        }}>
+          <div style={{ marginBottom: 16 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
+              <div style={{
+                width: 32, height: 32, borderRadius: 8, fontSize: 16,
+                background: "linear-gradient(135deg, #38bdf8, #a78bfa)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+              }}>🤖</div>
+              <div>
+                <div style={{ color: "#fff", fontWeight: 800, fontSize: 15 }}>AI Governance Copilot</div>
+                <div style={{ color: T.textDim, fontSize: 12 }}>
+                  Ask llama3 to explain your audit results in plain language
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {hasFairness && (
+            <AIInsightCard jobId={jobId} type="fairness" T={T} />
+          )}
+          {modules.includes("explainability") && results?.explainability && !results.explainability.error && (
+            <AIInsightCard jobId={jobId} type="explainability" T={T} />
+          )}
+          {hasCompliance && (
+            <AIInsightCard jobId={jobId} type="compliance" T={T} />
+          )}
+        </div>
       )}
     </div>
   );

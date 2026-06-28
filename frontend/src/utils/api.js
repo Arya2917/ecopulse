@@ -146,9 +146,17 @@ export const runWhatIf = async (jobId, featureValues) => {
   return res.json();
 };
 
-// ── Monitoring API ─────────────────────────────────────────────────
+// ── Monitoring API ─────────────────────────────────────────────────────────────
 
-
+/**
+ * Create a new drift monitor.
+ * @param {object} payload  {
+ *   name, sensitive_col, target_col,
+ *   baseline_group_rates: { groupLabel: rate },
+ *   dp_threshold?, psi_warning?, psi_critical?,
+ *   audit_job_id?
+ * }
+ */
 export const createMonitor = async (payload) => {
   const res = await fetch(`${BASE}/monitor/create`, {
     method: "POST",
@@ -157,7 +165,8 @@ export const createMonitor = async (payload) => {
   });
   return res.json();
 };
- 
+
+/** Push a prediction batch. rows = [ { sensitive, prediction }, ... ] */
 export const ingestBatch = async (monitorId, rows) => {
   const res = await fetch(`${BASE}/monitor/ingest/${monitorId}`, {
     method: "POST",
@@ -166,28 +175,60 @@ export const ingestBatch = async (monitorId, rows) => {
   });
   return res.json();
 };
- 
+
+/** Fetch full monitor state (metadata + snapshots + alerts). */
 export const getMonitorStatus = async (monitorId, snapshots = 50) => {
   const res = await fetch(`${BASE}/monitor/status/${monitorId}?snapshots=${snapshots}`);
   return res.json();
 };
- 
+
+/** List all monitors (summary only). */
 export const listMonitors = async () => {
   const res = await fetch(`${BASE}/monitor/list`);
   return res.json();
 };
- 
+
+/** Pause a monitor. */
 export const pauseMonitor = async (monitorId) => {
   const res = await fetch(`${BASE}/monitor/pause/${monitorId}`, { method: "POST" });
   return res.json();
 };
- 
+
+/** Resume a paused monitor. */
 export const resumeMonitor = async (monitorId) => {
   const res = await fetch(`${BASE}/monitor/resume/${monitorId}`, { method: "POST" });
   return res.json();
 };
- 
+
+/** Delete a monitor. */
 export const deleteMonitor = async (monitorId) => {
   const res = await fetch(`${BASE}/monitor/delete/${monitorId}`, { method: "DELETE" });
+  return res.json();
+};
+
+
+// ── AI Governance Copilot API ──────────────────────────────────────────────────
+
+/** Check if Ollama is running and llama3 is available. */
+export const checkAIHealth = async () => {
+  const res = await fetch(`${BASE}/ai/health`);
+  return res.json();
+};
+
+/** Run AI Fairness Consultant on a completed audit job. */
+export const getAIFairnessInsight = async (jobId) => {
+  const res = await fetch(`${BASE}/ai/fairness/${jobId}`, { method: "POST" });
+  return res.json();
+};
+
+/** Run AI Explainability Narrator on a completed audit job. */
+export const getAIExplainabilityInsight = async (jobId) => {
+  const res = await fetch(`${BASE}/ai/explainability/${jobId}`, { method: "POST" });
+  return res.json();
+};
+
+/** Run AI Compliance Advisor on a completed audit job. */
+export const getAIComplianceInsight = async (jobId) => {
+  const res = await fetch(`${BASE}/ai/compliance/${jobId}`, { method: "POST" });
   return res.json();
 };
