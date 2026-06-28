@@ -19,6 +19,7 @@ import { useTheme } from "../theme";
 import {
   createMonitor, listMonitors, getMonitorStatus,
   ingestBatch, pauseMonitor, resumeMonitor, deleteMonitor,
+  listAuditJobs,
 } from "../utils/api";
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -103,7 +104,37 @@ function CreateMonitorModal({ onClose, onCreate, T }) {
   const [err, setErr] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // ── Completed audit jobs, for the job picker dropdown ──────────────────
+  const [jobs, setJobs] = useState([]);
+  const [jobsLoading, setJobsLoading] = useState(true);
+  const [selectedJob, setSelectedJob] = useState(null); // full job object, or null = manual entry
+
+  useEffect(() => {
+    (async () => {
+      const data = await listAuditJobs("done");
+      if (Array.isArray(data?.jobs)) setJobs(data.jobs.filter(j => j.has_fairness));
+      setJobsLoading(false);
+    })();
+  }, []);
+
   const field = (key, value) => setForm(f => ({ ...f, [key]: value }));
+
+  const handleJobPick = (jobId) => {
+    if (!jobId) {
+      // "Manual entry" selected — clear auto-filled values, keep editable text inputs
+      setSelectedJob(null);
+      field("audit_job_id", "");
+      return;
+    }
+    const job = jobs.find(j => j.job_id === jobId);
+    setSelectedJob(job || null);
+    setForm(f => ({
+      ...f,
+      audit_job_id:  jobId,
+      target_col:    job?.target    || f.target_col,
+      sensitive_col: job?.sensitive || f.sensitive_col,
+    }));
+  };
 
   const handleSubmit = async () => {
     setErr("");
@@ -141,6 +172,8 @@ function CreateMonitorModal({ onClose, onCreate, T }) {
   };
   const labelStyle = { fontSize: 11, color: T.textDim, fontWeight: 600, letterSpacing: "0.05em", textTransform: "uppercase", marginBottom: 4, display: "block" };
 
+  const columnOptions = selectedJob?.columns?.length ? selectedJob.columns : null;
+
   return (
     <div style={{
       position: "fixed", inset: 0, background: "#000a",
@@ -164,32 +197,78 @@ function CreateMonitorModal({ onClose, onCreate, T }) {
             <label style={labelStyle}>Monitor name</label>
             <input style={inputStyle} value={form.name} onChange={e => field("name", e.target.value)} />
           </div>
+
+          {/* Job picker — replaces manually pasting a job UUID */}
+          <div>
+            <label style={labelStyle}>Audit job (auto-fills baseline + columns)</label>
+            <select
+              style={inputStyle}
+              value={form.audit_job_id}
+              onChange={e => handleJobPick(e.target.value)}
+            >
+              <option value="">
+                {jobsLoading ? "Loading completed audits…" : "— Manual entry (no audit job) —"}
+              </option>
+              {jobs.map(j => (
+                <option key={j.job_id} value={j.job_id}>
+                  {(j.dataset_name || j.job_id.slice(0, 8))}
+                  {j.created_at ? `  ·  ${new Date(j.created_at).toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}` : ""}
+                  {`  ·  target=${j.target || "?"}  sensitive=${j.sensitive || "?"}`}
+                </option>
+              ))}
+            </select>
+            {!jobsLoading && jobs.length === 0 && (
+              <div style={{ fontSize: 11, color: T.textDim, marginTop: 4 }}>
+                No completed audits with fairness results found yet. Run an audit first, or fill in fields manually below.
+              </div>
+            )}
+          </div>
+
           <div style={{ display: "flex", gap: 12 }}>
             <div style={{ flex: 1 }}>
               <label style={labelStyle}>Sensitive column</label>
-              <input style={inputStyle} value={form.sensitive_col} onChange={e => field("sensitive_col", e.target.value)} placeholder="e.g. gender" />
+              {columnOptions ? (
+                <select style={inputStyle} value={form.sensitive_col} onChange={e => field("sensitive_col", e.target.value)}>
+                  {!columnOptions.includes(form.sensitive_col) && <option value={form.sensitive_col}>{form.sensitive_col}</option>}
+                  {columnOptions.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+              ) : (
+                <input style={inputStyle} value={form.sensitive_col} onChange={e => field("sensitive_col", e.target.value)} placeholder="e.g. gender" />
+              )}
             </div>
             <div style={{ flex: 1 }}>
               <label style={labelStyle}>Target column</label>
-              <input style={inputStyle} value={form.target_col} onChange={e => field("target_col", e.target.value)} placeholder="e.g. approved" />
+              {columnOptions ? (
+                <select style={inputStyle} value={form.target_col} onChange={e => field("target_col", e.target.value)}>
+                  {!columnOptions.includes(form.target_col) && <option value={form.target_col}>{form.target_col}</option>}
+                  {columnOptions.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+              ) : (
+                <input style={inputStyle} value={form.target_col} onChange={e => field("target_col", e.target.value)} placeholder="e.g. approved" />
+              )}
             </div>
           </div>
-          <div>
-            <label style={labelStyle}>Baseline group rates (JSON)</label>
-            <textarea
-              rows={3} style={{ ...inputStyle, resize: "vertical" }}
-              value={form.baseline_raw}
-              onChange={e => field("baseline_raw", e.target.value)}
-              placeholder='{"GroupA": 0.72, "GroupB": 0.65}'
-            />
-            <div style={{ fontSize: 11, color: T.textDim, marginTop: 4 }}>
-              Positive prediction rate per group at baseline. Leave blank if using audit_job_id.
+
+          {!selectedJob && (
+            <div>
+              <label style={labelStyle}>Baseline group rates (JSON)</label>
+              <textarea
+                rows={3} style={{ ...inputStyle, resize: "vertical" }}
+                value={form.baseline_raw}
+                onChange={e => field("baseline_raw", e.target.value)}
+                placeholder='{"GroupA": 0.72, "GroupB": 0.65}'
+              />
+              <div style={{ fontSize: 11, color: T.textDim, marginTop: 4 }}>
+                Positive prediction rate per group at baseline. Not needed if you pick an audit job above.
+              </div>
             </div>
-          </div>
-          <div>
-            <label style={labelStyle}>Audit job ID (optional — auto-extracts baseline)</label>
-            <input style={inputStyle} value={form.audit_job_id} onChange={e => field("audit_job_id", e.target.value)} placeholder="paste a completed audit job UUID" />
-          </div>
+          )}
+
+          {selectedJob && (
+            <div style={{ fontSize: 12, color: T.textDim, background: T.surfaceHi, borderRadius: 7, padding: "8px 12px" }}>
+              ✓ Baseline group rates will be auto-extracted from this audit's fairness results.
+            </div>
+          )}
 
           <div style={{ borderTop: `1px solid ${T.border}`, paddingTop: 14, marginTop: 4 }}>
             <div style={{ fontSize: 12, color: T.textDim, fontWeight: 700, marginBottom: 10 }}>Alert Thresholds</div>

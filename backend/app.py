@@ -146,6 +146,7 @@ def audit_start():
 
     params = {
         "csv_path":       csv_path,
+        "dataset_name":   request.files["file"].filename or os.path.basename(csv_path),
         "target":         request.form.get("target", ""),
         "sensitive":      request.form.get("sensitive", ""),
         "pred_col":       request.form.get("pred_col") or None,
@@ -239,6 +240,53 @@ def audit_report(job_id):
         report_path, as_attachment=True,
         download_name=f"ecopulse_report_{job_id[:8]}.html"
     )
+
+
+@app.route("/audit/list", methods=["GET"])
+def audit_list():
+    """
+    Lightweight list of in-memory audit jobs, most recent first.
+    Lets the frontend populate dropdowns (job picker, target/sensitive column
+    pickers) instead of requiring the user to paste a job ID manually.
+
+    Query param ?status=done to only return completed jobs (useful for
+    monitoring setup, which requires a finished fairness run).
+    """
+    import pandas as pd  # local import — keeps this endpoint independent of import order above
+
+    status_filter = request.args.get("status")
+    jobs_out = []
+    for job_id, job in JOBS.items():
+        if status_filter and job.get("status") != status_filter:
+            continue
+
+        params = job.get("params", {})
+
+        # Read the dataset's column names so the frontend can offer them as
+        # dropdown options for target/sensitive column, instead of free text.
+        columns = []
+        csv_path = params.get("csv_path")
+        if csv_path and os.path.exists(csv_path):
+            try:
+                columns = pd.read_csv(csv_path, nrows=0).columns.tolist()
+            except Exception:
+                columns = []
+
+        jobs_out.append({
+            "job_id":        job_id,
+            "status":        job.get("status"),
+            "created_at":    job.get("created_at"),
+            "modules":       job.get("modules", []),
+            "dataset_name":  params.get("dataset_name", ""),
+            "target":        params.get("target", ""),
+            "sensitive":     params.get("sensitive", ""),
+            "columns":       columns,
+            "has_fairness":  bool(job.get("module_results", {}).get("fairness"))
+                              and not job.get("module_results", {}).get("fairness", {}).get("error"),
+        })
+
+    jobs_out.sort(key=lambda j: j["created_at"] or "", reverse=True)
+    return jsonify({"jobs": jobs_out})
 
 
 # ── Mitigation endpoints (separate flow, unchanged) ───────────────────────────

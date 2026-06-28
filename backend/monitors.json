@@ -998,5 +998,1004 @@
         "group": "all"
       }
     ]
+  },
+  "bf96f9ea-a7ac-4160-b21d-5892e664e820": {
+    "id": "bf96f9ea-a7ac-4160-b21d-5892e664e820",
+    "name": "Adult Model",
+    "sensitive_col": "sex",
+    "target_col": "income",
+    "baseline_group_rates": {
+      "Female": 0.0974,
+      "Male": 0.3194
+    },
+    "thresholds": {
+      "dp_threshold": 0.1,
+      "psi_warning": 0.1,
+      "psi_critical": 0.25
+    },
+    "created_at": "2026-06-28T13:01:04.237647+00:00",
+    "status": "active",
+    "snapshots": [
+      {
+        "timestamp": "2026-06-28T13:01:07.890096+00:00",
+        "batch_size": 30,
+        "group_rates": {
+          "Female": 0.0,
+          "Male": 0.4
+        },
+        "drift_scores": {
+          "Female": {
+            "baseline_rate": 0.0974,
+            "current_rate": 0.0,
+            "delta": -0.0974,
+            "psi": 1.1188
+          },
+          "Male": {
+            "baseline_rate": 0.3194,
+            "current_rate": 0.4,
+            "delta": 0.0806,
+            "psi": 0.0181
+          }
+        },
+        "dp_gap": 0.4,
+        "alerts": [
+          {
+            "timestamp": "2026-06-28T13:01:07.890096+00:00",
+            "level": "critical",
+            "message": "CRITICAL drift on group 'Female': PSI=1.119 (baseline 9.74% \u2192 current 0.00%)",
+            "group": "Female"
+          },
+          {
+            "timestamp": "2026-06-28T13:01:07.890096+00:00",
+            "level": "warning",
+            "message": "Demographic-parity gap exceeded threshold: gap=0.400 > threshold=0.100",
+            "group": "all"
+          }
+        ]
+      },
+      {
+        "timestamp": "2026-06-28T13:01:09.352806+00:00",
+        "batch_size": 30,
+        "group_rates": {
+          "Female": 0.0,
+          "Male": 0.4666666666666667
+        },
+        "drift_scores": {
+          "Female": {
+            "baseline_rate": 0.0974,
+            "current_rate": 0.0,
+            "delta": -0.0974,
+            "psi": 1.1188
+          },
+          "Male": {
+            "baseline_rate": 0.3194,
+            "current_rate": 0.4667,
+            "delta": 0.1473,
+            "psi": 0.0558
+          }
+        },
+        "dp_gap": 0.4667,
+        "alerts": [
+          {
+            "timestamp": "2026-06-28T13:01:09.352806+00:00",
+            "level": "critical",
+            "message": "CRITICAL drift on group 'Female': PSI=1.119 (baseline 9.74% \u2192 current 0.00%)",
+            "group": "Female"
+          },
+          {
+            "timestamp": "2026-06-28T13:01:09.352806+00:00",
+            "level": "warning",
+            "message": "Demographic-parity gap exceeded threshold: gap=0.467 > threshold=0.100",
+            "group": "all"
+          }
+        ]
+      },
+      {
+        "timestamp": "2026-06-28T13:01:10.875053+00:00",
+        "batch_size": 30,
+        "group_rates": {
+          "Female": 0.0,
+          "Male": 0.4
+        },
+        "drift_scores": {
+          "Female": {
+            "baseline_rate": 0.0974,
+            "current_rate": 0.0,
+            "delta": -0.0974,
+            "psi": 1.1188
+          },
+          "Male": {
+            "baseline_rate": 0.3194,
+            "current_rate": 0.4,
+            "delta": 0.0806,
+            "psi": 0.0181
+          }
+        },
+        "dp_gap": 0.4,
+        "alerts": [
+          {
+            "timestamp": "2026-06-28T13:01:10.875053+00:00",
+            "level": "critical",
+            "message": "CRITICAL drift on group 'Female': PSI=1.119 (baseline 9.74% \u2192 current 0.00%)",
+            "group": "Female"
+          },
+          {
+            "timestamp": "2026-06-28T13:01:10.875053+00:00",
+            "level": "warning",
+            "message": "Demographic-parity gap exceeded threshold: gap=0.400 > threshold=0.100",
+            "group": "all"
+          }
+        ]
+      },
+      {
+        "timestamp": "2026-06-28T13:01:12.371950+00:00",
+        "batch_size": 30,
+        "group_rates": {
+          "Female": 0.13333333333333333,
+          "Male": 0.4
+        },
+        "drift_scores": {
+          "Female": {
+            "baseline_rate": 0.0974,
+            "current_rate": 0.1333,
+            "delta": 0.0359,
+            "psi": 0.0113
+          },
+          "Male": {
+            "baseline_rate": 0.3194,
+            "current_rate": 0.4,
+            "delta": 0.0806,
+            "psi": 0.0181
+          }
+        },
+        "dp_gap": 0.2667,
+        "alerts": [
+          {
+            "timestamp": "2026-06-28T13:01:12.371950+00:00",
+            "level": "warning",
+            "message": "Demographic-parity gap exceeded threshold: gap=0.267 > threshold=0.100",
+            "group": "all"
+          }
+        ]
+      },
+      {
+        "timestamp": "2026-06-28T13:01:13.886393+00:00",
+        "batch_size": 30,
+        "group_rates": {
+          "Female": 0.06666666666666667,
+          "Male": 0.2
+        },
+        "drift_scores": {
+          "Female": {
+            "baseline_rate": 0.0974,
+            "current_rate": 0.0667,
+            "delta": -0.0307,
+            "psi": 0.0117
+          },
+          "Male": {
+            "baseline_rate": 0.3194,
+            "current_rate": 0.2,
+            "delta": -0.1194,
+            "psi": 0.0559
+          }
+        },
+        "dp_gap": 0.1333,
+        "alerts": [
+          {
+            "timestamp": "2026-06-28T13:01:13.886393+00:00",
+            "level": "warning",
+            "message": "Demographic-parity gap exceeded threshold: gap=0.133 > threshold=0.100",
+            "group": "all"
+          }
+        ]
+      },
+      {
+        "timestamp": "2026-06-28T13:01:15.355105+00:00",
+        "batch_size": 30,
+        "group_rates": {
+          "Female": 0.13333333333333333,
+          "Male": 0.26666666666666666
+        },
+        "drift_scores": {
+          "Female": {
+            "baseline_rate": 0.0974,
+            "current_rate": 0.1333,
+            "delta": 0.0359,
+            "psi": 0.0113
+          },
+          "Male": {
+            "baseline_rate": 0.3194,
+            "current_rate": 0.2667,
+            "delta": -0.0527,
+            "psi": 0.0095
+          }
+        },
+        "dp_gap": 0.1333,
+        "alerts": [
+          {
+            "timestamp": "2026-06-28T13:01:15.355105+00:00",
+            "level": "warning",
+            "message": "Demographic-parity gap exceeded threshold: gap=0.133 > threshold=0.100",
+            "group": "all"
+          }
+        ]
+      },
+      {
+        "timestamp": "2026-06-28T13:01:16.860064+00:00",
+        "batch_size": 30,
+        "group_rates": {
+          "Female": 0.2,
+          "Male": 0.2
+        },
+        "drift_scores": {
+          "Female": {
+            "baseline_rate": 0.0974,
+            "current_rate": 0.2,
+            "delta": 0.1026,
+            "psi": 0.0738
+          },
+          "Male": {
+            "baseline_rate": 0.3194,
+            "current_rate": 0.2,
+            "delta": -0.1194,
+            "psi": 0.0559
+          }
+        },
+        "dp_gap": 0.0,
+        "alerts": []
+      },
+      {
+        "timestamp": "2026-06-28T13:01:19.230140+00:00",
+        "batch_size": 30,
+        "group_rates": {
+          "Female": 0.26666666666666666,
+          "Male": 0.13333333333333333
+        },
+        "drift_scores": {
+          "Female": {
+            "baseline_rate": 0.0974,
+            "current_rate": 0.2667,
+            "delta": 0.1693,
+            "psi": 0.1705
+          },
+          "Male": {
+            "baseline_rate": 0.3194,
+            "current_rate": 0.1333,
+            "delta": -0.1861,
+            "psi": 0.1625
+          }
+        },
+        "dp_gap": 0.1333,
+        "alerts": [
+          {
+            "timestamp": "2026-06-28T13:01:19.230140+00:00",
+            "level": "warning",
+            "message": "WARNING drift on group 'Female': PSI=0.171 (baseline 9.74% \u2192 current 26.67%)",
+            "group": "Female"
+          },
+          {
+            "timestamp": "2026-06-28T13:01:19.230140+00:00",
+            "level": "warning",
+            "message": "WARNING drift on group 'Male': PSI=0.163 (baseline 31.94% \u2192 current 13.33%)",
+            "group": "Male"
+          },
+          {
+            "timestamp": "2026-06-28T13:01:19.230140+00:00",
+            "level": "warning",
+            "message": "Demographic-parity gap exceeded threshold: gap=0.133 > threshold=0.100",
+            "group": "all"
+          }
+        ]
+      },
+      {
+        "timestamp": "2026-06-28T13:01:20.228099+00:00",
+        "batch_size": 30,
+        "group_rates": {
+          "Female": 0.13333333333333333,
+          "Male": 0.4
+        },
+        "drift_scores": {
+          "Female": {
+            "baseline_rate": 0.0974,
+            "current_rate": 0.1333,
+            "delta": 0.0359,
+            "psi": 0.0113
+          },
+          "Male": {
+            "baseline_rate": 0.3194,
+            "current_rate": 0.4,
+            "delta": 0.0806,
+            "psi": 0.0181
+          }
+        },
+        "dp_gap": 0.2667,
+        "alerts": [
+          {
+            "timestamp": "2026-06-28T13:01:20.228099+00:00",
+            "level": "warning",
+            "message": "Demographic-parity gap exceeded threshold: gap=0.267 > threshold=0.100",
+            "group": "all"
+          }
+        ]
+      },
+      {
+        "timestamp": "2026-06-28T13:01:22.226281+00:00",
+        "batch_size": 30,
+        "group_rates": {
+          "Female": 0.5333333333333333,
+          "Male": 0.13333333333333333
+        },
+        "drift_scores": {
+          "Female": {
+            "baseline_rate": 0.0974,
+            "current_rate": 0.5333,
+            "delta": 0.4359,
+            "psi": 0.7412
+          },
+          "Male": {
+            "baseline_rate": 0.3194,
+            "current_rate": 0.1333,
+            "delta": -0.1861,
+            "psi": 0.1625
+          }
+        },
+        "dp_gap": 0.4,
+        "alerts": [
+          {
+            "timestamp": "2026-06-28T13:01:22.226281+00:00",
+            "level": "critical",
+            "message": "CRITICAL drift on group 'Female': PSI=0.741 (baseline 9.74% \u2192 current 53.33%)",
+            "group": "Female"
+          },
+          {
+            "timestamp": "2026-06-28T13:01:22.226281+00:00",
+            "level": "warning",
+            "message": "WARNING drift on group 'Male': PSI=0.163 (baseline 31.94% \u2192 current 13.33%)",
+            "group": "Male"
+          },
+          {
+            "timestamp": "2026-06-28T13:01:22.226281+00:00",
+            "level": "warning",
+            "message": "Demographic-parity gap exceeded threshold: gap=0.400 > threshold=0.100",
+            "group": "all"
+          }
+        ]
+      },
+      {
+        "timestamp": "2026-06-28T13:01:23.242922+00:00",
+        "batch_size": 30,
+        "group_rates": {
+          "Female": 0.4666666666666667,
+          "Male": 0.4
+        },
+        "drift_scores": {
+          "Female": {
+            "baseline_rate": 0.0974,
+            "current_rate": 0.4667,
+            "delta": 0.3693,
+            "psi": 0.5786
+          },
+          "Male": {
+            "baseline_rate": 0.3194,
+            "current_rate": 0.4,
+            "delta": 0.0806,
+            "psi": 0.0181
+          }
+        },
+        "dp_gap": 0.0667,
+        "alerts": [
+          {
+            "timestamp": "2026-06-28T13:01:23.242922+00:00",
+            "level": "critical",
+            "message": "CRITICAL drift on group 'Female': PSI=0.579 (baseline 9.74% \u2192 current 46.67%)",
+            "group": "Female"
+          }
+        ]
+      },
+      {
+        "timestamp": "2026-06-28T13:01:25.232109+00:00",
+        "batch_size": 30,
+        "group_rates": {
+          "Female": 0.4,
+          "Male": 0.06666666666666667
+        },
+        "drift_scores": {
+          "Female": {
+            "baseline_rate": 0.0974,
+            "current_rate": 0.4,
+            "delta": 0.3026,
+            "psi": 0.4275
+          },
+          "Male": {
+            "baseline_rate": 0.3194,
+            "current_rate": 0.0667,
+            "delta": -0.2527,
+            "psi": 0.396
+          }
+        },
+        "dp_gap": 0.3333,
+        "alerts": [
+          {
+            "timestamp": "2026-06-28T13:01:25.232109+00:00",
+            "level": "critical",
+            "message": "CRITICAL drift on group 'Female': PSI=0.427 (baseline 9.74% \u2192 current 40.00%)",
+            "group": "Female"
+          },
+          {
+            "timestamp": "2026-06-28T13:01:25.232109+00:00",
+            "level": "critical",
+            "message": "CRITICAL drift on group 'Male': PSI=0.396 (baseline 31.94% \u2192 current 6.67%)",
+            "group": "Male"
+          },
+          {
+            "timestamp": "2026-06-28T13:01:25.232109+00:00",
+            "level": "warning",
+            "message": "Demographic-parity gap exceeded threshold: gap=0.333 > threshold=0.100",
+            "group": "all"
+          }
+        ]
+      },
+      {
+        "timestamp": "2026-06-28T13:01:26.245461+00:00",
+        "batch_size": 30,
+        "group_rates": {
+          "Female": 0.2,
+          "Male": 0.26666666666666666
+        },
+        "drift_scores": {
+          "Female": {
+            "baseline_rate": 0.0974,
+            "current_rate": 0.2,
+            "delta": 0.1026,
+            "psi": 0.0738
+          },
+          "Male": {
+            "baseline_rate": 0.3194,
+            "current_rate": 0.2667,
+            "delta": -0.0527,
+            "psi": 0.0095
+          }
+        },
+        "dp_gap": 0.0667,
+        "alerts": []
+      },
+      {
+        "timestamp": "2026-06-28T13:01:28.222897+00:00",
+        "batch_size": 30,
+        "group_rates": {
+          "Female": 0.5333333333333333,
+          "Male": 0.2
+        },
+        "drift_scores": {
+          "Female": {
+            "baseline_rate": 0.0974,
+            "current_rate": 0.5333,
+            "delta": 0.4359,
+            "psi": 0.7412
+          },
+          "Male": {
+            "baseline_rate": 0.3194,
+            "current_rate": 0.2,
+            "delta": -0.1194,
+            "psi": 0.0559
+          }
+        },
+        "dp_gap": 0.3333,
+        "alerts": [
+          {
+            "timestamp": "2026-06-28T13:01:28.222897+00:00",
+            "level": "critical",
+            "message": "CRITICAL drift on group 'Female': PSI=0.741 (baseline 9.74% \u2192 current 53.33%)",
+            "group": "Female"
+          },
+          {
+            "timestamp": "2026-06-28T13:01:28.222897+00:00",
+            "level": "warning",
+            "message": "Demographic-parity gap exceeded threshold: gap=0.333 > threshold=0.100",
+            "group": "all"
+          }
+        ]
+      },
+      {
+        "timestamp": "2026-06-28T13:01:29.222179+00:00",
+        "batch_size": 30,
+        "group_rates": {
+          "Female": 0.26666666666666666,
+          "Male": 0.06666666666666667
+        },
+        "drift_scores": {
+          "Female": {
+            "baseline_rate": 0.0974,
+            "current_rate": 0.2667,
+            "delta": 0.1693,
+            "psi": 0.1705
+          },
+          "Male": {
+            "baseline_rate": 0.3194,
+            "current_rate": 0.0667,
+            "delta": -0.2527,
+            "psi": 0.396
+          }
+        },
+        "dp_gap": 0.2,
+        "alerts": [
+          {
+            "timestamp": "2026-06-28T13:01:29.222179+00:00",
+            "level": "warning",
+            "message": "WARNING drift on group 'Female': PSI=0.171 (baseline 9.74% \u2192 current 26.67%)",
+            "group": "Female"
+          },
+          {
+            "timestamp": "2026-06-28T13:01:29.222179+00:00",
+            "level": "critical",
+            "message": "CRITICAL drift on group 'Male': PSI=0.396 (baseline 31.94% \u2192 current 6.67%)",
+            "group": "Male"
+          },
+          {
+            "timestamp": "2026-06-28T13:01:29.222179+00:00",
+            "level": "warning",
+            "message": "Demographic-parity gap exceeded threshold: gap=0.200 > threshold=0.100",
+            "group": "all"
+          }
+        ]
+      },
+      {
+        "timestamp": "2026-06-28T13:01:31.238353+00:00",
+        "batch_size": 30,
+        "group_rates": {
+          "Female": 0.6,
+          "Male": 0.13333333333333333
+        },
+        "drift_scores": {
+          "Female": {
+            "baseline_rate": 0.0974,
+            "current_rate": 0.6,
+            "delta": 0.5026,
+            "psi": 0.9138
+          },
+          "Male": {
+            "baseline_rate": 0.3194,
+            "current_rate": 0.1333,
+            "delta": -0.1861,
+            "psi": 0.1625
+          }
+        },
+        "dp_gap": 0.4667,
+        "alerts": [
+          {
+            "timestamp": "2026-06-28T13:01:31.238353+00:00",
+            "level": "critical",
+            "message": "CRITICAL drift on group 'Female': PSI=0.914 (baseline 9.74% \u2192 current 60.00%)",
+            "group": "Female"
+          },
+          {
+            "timestamp": "2026-06-28T13:01:31.238353+00:00",
+            "level": "warning",
+            "message": "WARNING drift on group 'Male': PSI=0.163 (baseline 31.94% \u2192 current 13.33%)",
+            "group": "Male"
+          },
+          {
+            "timestamp": "2026-06-28T13:01:31.238353+00:00",
+            "level": "warning",
+            "message": "Demographic-parity gap exceeded threshold: gap=0.467 > threshold=0.100",
+            "group": "all"
+          }
+        ]
+      },
+      {
+        "timestamp": "2026-06-28T13:01:32.219039+00:00",
+        "batch_size": 30,
+        "group_rates": {
+          "Female": 0.26666666666666666,
+          "Male": 0.0
+        },
+        "drift_scores": {
+          "Female": {
+            "baseline_rate": 0.0974,
+            "current_rate": 0.2667,
+            "delta": 0.1693,
+            "psi": 0.1705
+          },
+          "Male": {
+            "baseline_rate": 0.3194,
+            "current_rate": 0.0,
+            "delta": -0.3194,
+            "psi": 4.0481
+          }
+        },
+        "dp_gap": 0.2667,
+        "alerts": [
+          {
+            "timestamp": "2026-06-28T13:01:32.219039+00:00",
+            "level": "warning",
+            "message": "WARNING drift on group 'Female': PSI=0.171 (baseline 9.74% \u2192 current 26.67%)",
+            "group": "Female"
+          },
+          {
+            "timestamp": "2026-06-28T13:01:32.219039+00:00",
+            "level": "critical",
+            "message": "CRITICAL drift on group 'Male': PSI=4.048 (baseline 31.94% \u2192 current 0.00%)",
+            "group": "Male"
+          },
+          {
+            "timestamp": "2026-06-28T13:01:32.219039+00:00",
+            "level": "warning",
+            "message": "Demographic-parity gap exceeded threshold: gap=0.267 > threshold=0.100",
+            "group": "all"
+          }
+        ]
+      },
+      {
+        "timestamp": "2026-06-28T13:01:34.227859+00:00",
+        "batch_size": 30,
+        "group_rates": {
+          "Female": 0.5333333333333333,
+          "Male": 0.06666666666666667
+        },
+        "drift_scores": {
+          "Female": {
+            "baseline_rate": 0.0974,
+            "current_rate": 0.5333,
+            "delta": 0.4359,
+            "psi": 0.7412
+          },
+          "Male": {
+            "baseline_rate": 0.3194,
+            "current_rate": 0.0667,
+            "delta": -0.2527,
+            "psi": 0.396
+          }
+        },
+        "dp_gap": 0.4667,
+        "alerts": [
+          {
+            "timestamp": "2026-06-28T13:01:34.227859+00:00",
+            "level": "critical",
+            "message": "CRITICAL drift on group 'Female': PSI=0.741 (baseline 9.74% \u2192 current 53.33%)",
+            "group": "Female"
+          },
+          {
+            "timestamp": "2026-06-28T13:01:34.227859+00:00",
+            "level": "critical",
+            "message": "CRITICAL drift on group 'Male': PSI=0.396 (baseline 31.94% \u2192 current 6.67%)",
+            "group": "Male"
+          },
+          {
+            "timestamp": "2026-06-28T13:01:34.227859+00:00",
+            "level": "warning",
+            "message": "Demographic-parity gap exceeded threshold: gap=0.467 > threshold=0.100",
+            "group": "all"
+          }
+        ]
+      },
+      {
+        "timestamp": "2026-06-28T13:01:35.211523+00:00",
+        "batch_size": 30,
+        "group_rates": {
+          "Female": 0.8666666666666667,
+          "Male": 0.06666666666666667
+        },
+        "drift_scores": {
+          "Female": {
+            "baseline_rate": 0.0974,
+            "current_rate": 0.8667,
+            "delta": 0.7693,
+            "psi": 1.6815
+          },
+          "Male": {
+            "baseline_rate": 0.3194,
+            "current_rate": 0.0667,
+            "delta": -0.2527,
+            "psi": 0.396
+          }
+        },
+        "dp_gap": 0.8,
+        "alerts": [
+          {
+            "timestamp": "2026-06-28T13:01:35.211523+00:00",
+            "level": "critical",
+            "message": "CRITICAL drift on group 'Female': PSI=1.681 (baseline 9.74% \u2192 current 86.67%)",
+            "group": "Female"
+          },
+          {
+            "timestamp": "2026-06-28T13:01:35.211523+00:00",
+            "level": "critical",
+            "message": "CRITICAL drift on group 'Male': PSI=0.396 (baseline 31.94% \u2192 current 6.67%)",
+            "group": "Male"
+          },
+          {
+            "timestamp": "2026-06-28T13:01:35.211523+00:00",
+            "level": "warning",
+            "message": "Demographic-parity gap exceeded threshold: gap=0.800 > threshold=0.100",
+            "group": "all"
+          }
+        ]
+      },
+      {
+        "timestamp": "2026-06-28T13:01:37.241749+00:00",
+        "batch_size": 30,
+        "group_rates": {
+          "Female": 0.6,
+          "Male": 0.0
+        },
+        "drift_scores": {
+          "Female": {
+            "baseline_rate": 0.0974,
+            "current_rate": 0.6,
+            "delta": 0.5026,
+            "psi": 0.9138
+          },
+          "Male": {
+            "baseline_rate": 0.3194,
+            "current_rate": 0.0,
+            "delta": -0.3194,
+            "psi": 4.0481
+          }
+        },
+        "dp_gap": 0.6,
+        "alerts": [
+          {
+            "timestamp": "2026-06-28T13:01:37.241749+00:00",
+            "level": "critical",
+            "message": "CRITICAL drift on group 'Female': PSI=0.914 (baseline 9.74% \u2192 current 60.00%)",
+            "group": "Female"
+          },
+          {
+            "timestamp": "2026-06-28T13:01:37.241749+00:00",
+            "level": "critical",
+            "message": "CRITICAL drift on group 'Male': PSI=4.048 (baseline 31.94% \u2192 current 0.00%)",
+            "group": "Male"
+          },
+          {
+            "timestamp": "2026-06-28T13:01:37.241749+00:00",
+            "level": "warning",
+            "message": "Demographic-parity gap exceeded threshold: gap=0.600 > threshold=0.100",
+            "group": "all"
+          }
+        ]
+      }
+    ],
+    "alerts": [
+      {
+        "timestamp": "2026-06-28T13:01:07.890096+00:00",
+        "level": "critical",
+        "message": "CRITICAL drift on group 'Female': PSI=1.119 (baseline 9.74% \u2192 current 0.00%)",
+        "group": "Female"
+      },
+      {
+        "timestamp": "2026-06-28T13:01:07.890096+00:00",
+        "level": "warning",
+        "message": "Demographic-parity gap exceeded threshold: gap=0.400 > threshold=0.100",
+        "group": "all"
+      },
+      {
+        "timestamp": "2026-06-28T13:01:09.352806+00:00",
+        "level": "critical",
+        "message": "CRITICAL drift on group 'Female': PSI=1.119 (baseline 9.74% \u2192 current 0.00%)",
+        "group": "Female"
+      },
+      {
+        "timestamp": "2026-06-28T13:01:09.352806+00:00",
+        "level": "warning",
+        "message": "Demographic-parity gap exceeded threshold: gap=0.467 > threshold=0.100",
+        "group": "all"
+      },
+      {
+        "timestamp": "2026-06-28T13:01:10.875053+00:00",
+        "level": "critical",
+        "message": "CRITICAL drift on group 'Female': PSI=1.119 (baseline 9.74% \u2192 current 0.00%)",
+        "group": "Female"
+      },
+      {
+        "timestamp": "2026-06-28T13:01:10.875053+00:00",
+        "level": "warning",
+        "message": "Demographic-parity gap exceeded threshold: gap=0.400 > threshold=0.100",
+        "group": "all"
+      },
+      {
+        "timestamp": "2026-06-28T13:01:12.371950+00:00",
+        "level": "warning",
+        "message": "Demographic-parity gap exceeded threshold: gap=0.267 > threshold=0.100",
+        "group": "all"
+      },
+      {
+        "timestamp": "2026-06-28T13:01:13.886393+00:00",
+        "level": "warning",
+        "message": "Demographic-parity gap exceeded threshold: gap=0.133 > threshold=0.100",
+        "group": "all"
+      },
+      {
+        "timestamp": "2026-06-28T13:01:15.355105+00:00",
+        "level": "warning",
+        "message": "Demographic-parity gap exceeded threshold: gap=0.133 > threshold=0.100",
+        "group": "all"
+      },
+      {
+        "timestamp": "2026-06-28T13:01:19.230140+00:00",
+        "level": "warning",
+        "message": "WARNING drift on group 'Female': PSI=0.171 (baseline 9.74% \u2192 current 26.67%)",
+        "group": "Female"
+      },
+      {
+        "timestamp": "2026-06-28T13:01:19.230140+00:00",
+        "level": "warning",
+        "message": "WARNING drift on group 'Male': PSI=0.163 (baseline 31.94% \u2192 current 13.33%)",
+        "group": "Male"
+      },
+      {
+        "timestamp": "2026-06-28T13:01:19.230140+00:00",
+        "level": "warning",
+        "message": "Demographic-parity gap exceeded threshold: gap=0.133 > threshold=0.100",
+        "group": "all"
+      },
+      {
+        "timestamp": "2026-06-28T13:01:20.228099+00:00",
+        "level": "warning",
+        "message": "Demographic-parity gap exceeded threshold: gap=0.267 > threshold=0.100",
+        "group": "all"
+      },
+      {
+        "timestamp": "2026-06-28T13:01:22.226281+00:00",
+        "level": "critical",
+        "message": "CRITICAL drift on group 'Female': PSI=0.741 (baseline 9.74% \u2192 current 53.33%)",
+        "group": "Female"
+      },
+      {
+        "timestamp": "2026-06-28T13:01:22.226281+00:00",
+        "level": "warning",
+        "message": "WARNING drift on group 'Male': PSI=0.163 (baseline 31.94% \u2192 current 13.33%)",
+        "group": "Male"
+      },
+      {
+        "timestamp": "2026-06-28T13:01:22.226281+00:00",
+        "level": "warning",
+        "message": "Demographic-parity gap exceeded threshold: gap=0.400 > threshold=0.100",
+        "group": "all"
+      },
+      {
+        "timestamp": "2026-06-28T13:01:23.242922+00:00",
+        "level": "critical",
+        "message": "CRITICAL drift on group 'Female': PSI=0.579 (baseline 9.74% \u2192 current 46.67%)",
+        "group": "Female"
+      },
+      {
+        "timestamp": "2026-06-28T13:01:25.232109+00:00",
+        "level": "critical",
+        "message": "CRITICAL drift on group 'Female': PSI=0.427 (baseline 9.74% \u2192 current 40.00%)",
+        "group": "Female"
+      },
+      {
+        "timestamp": "2026-06-28T13:01:25.232109+00:00",
+        "level": "critical",
+        "message": "CRITICAL drift on group 'Male': PSI=0.396 (baseline 31.94% \u2192 current 6.67%)",
+        "group": "Male"
+      },
+      {
+        "timestamp": "2026-06-28T13:01:25.232109+00:00",
+        "level": "warning",
+        "message": "Demographic-parity gap exceeded threshold: gap=0.333 > threshold=0.100",
+        "group": "all"
+      },
+      {
+        "timestamp": "2026-06-28T13:01:28.222897+00:00",
+        "level": "critical",
+        "message": "CRITICAL drift on group 'Female': PSI=0.741 (baseline 9.74% \u2192 current 53.33%)",
+        "group": "Female"
+      },
+      {
+        "timestamp": "2026-06-28T13:01:28.222897+00:00",
+        "level": "warning",
+        "message": "Demographic-parity gap exceeded threshold: gap=0.333 > threshold=0.100",
+        "group": "all"
+      },
+      {
+        "timestamp": "2026-06-28T13:01:29.222179+00:00",
+        "level": "warning",
+        "message": "WARNING drift on group 'Female': PSI=0.171 (baseline 9.74% \u2192 current 26.67%)",
+        "group": "Female"
+      },
+      {
+        "timestamp": "2026-06-28T13:01:29.222179+00:00",
+        "level": "critical",
+        "message": "CRITICAL drift on group 'Male': PSI=0.396 (baseline 31.94% \u2192 current 6.67%)",
+        "group": "Male"
+      },
+      {
+        "timestamp": "2026-06-28T13:01:29.222179+00:00",
+        "level": "warning",
+        "message": "Demographic-parity gap exceeded threshold: gap=0.200 > threshold=0.100",
+        "group": "all"
+      },
+      {
+        "timestamp": "2026-06-28T13:01:31.238353+00:00",
+        "level": "critical",
+        "message": "CRITICAL drift on group 'Female': PSI=0.914 (baseline 9.74% \u2192 current 60.00%)",
+        "group": "Female"
+      },
+      {
+        "timestamp": "2026-06-28T13:01:31.238353+00:00",
+        "level": "warning",
+        "message": "WARNING drift on group 'Male': PSI=0.163 (baseline 31.94% \u2192 current 13.33%)",
+        "group": "Male"
+      },
+      {
+        "timestamp": "2026-06-28T13:01:31.238353+00:00",
+        "level": "warning",
+        "message": "Demographic-parity gap exceeded threshold: gap=0.467 > threshold=0.100",
+        "group": "all"
+      },
+      {
+        "timestamp": "2026-06-28T13:01:32.219039+00:00",
+        "level": "warning",
+        "message": "WARNING drift on group 'Female': PSI=0.171 (baseline 9.74% \u2192 current 26.67%)",
+        "group": "Female"
+      },
+      {
+        "timestamp": "2026-06-28T13:01:32.219039+00:00",
+        "level": "critical",
+        "message": "CRITICAL drift on group 'Male': PSI=4.048 (baseline 31.94% \u2192 current 0.00%)",
+        "group": "Male"
+      },
+      {
+        "timestamp": "2026-06-28T13:01:32.219039+00:00",
+        "level": "warning",
+        "message": "Demographic-parity gap exceeded threshold: gap=0.267 > threshold=0.100",
+        "group": "all"
+      },
+      {
+        "timestamp": "2026-06-28T13:01:34.227859+00:00",
+        "level": "critical",
+        "message": "CRITICAL drift on group 'Female': PSI=0.741 (baseline 9.74% \u2192 current 53.33%)",
+        "group": "Female"
+      },
+      {
+        "timestamp": "2026-06-28T13:01:34.227859+00:00",
+        "level": "critical",
+        "message": "CRITICAL drift on group 'Male': PSI=0.396 (baseline 31.94% \u2192 current 6.67%)",
+        "group": "Male"
+      },
+      {
+        "timestamp": "2026-06-28T13:01:34.227859+00:00",
+        "level": "warning",
+        "message": "Demographic-parity gap exceeded threshold: gap=0.467 > threshold=0.100",
+        "group": "all"
+      },
+      {
+        "timestamp": "2026-06-28T13:01:35.211523+00:00",
+        "level": "critical",
+        "message": "CRITICAL drift on group 'Female': PSI=1.681 (baseline 9.74% \u2192 current 86.67%)",
+        "group": "Female"
+      },
+      {
+        "timestamp": "2026-06-28T13:01:35.211523+00:00",
+        "level": "critical",
+        "message": "CRITICAL drift on group 'Male': PSI=0.396 (baseline 31.94% \u2192 current 6.67%)",
+        "group": "Male"
+      },
+      {
+        "timestamp": "2026-06-28T13:01:35.211523+00:00",
+        "level": "warning",
+        "message": "Demographic-parity gap exceeded threshold: gap=0.800 > threshold=0.100",
+        "group": "all"
+      },
+      {
+        "timestamp": "2026-06-28T13:01:37.241749+00:00",
+        "level": "critical",
+        "message": "CRITICAL drift on group 'Female': PSI=0.914 (baseline 9.74% \u2192 current 60.00%)",
+        "group": "Female"
+      },
+      {
+        "timestamp": "2026-06-28T13:01:37.241749+00:00",
+        "level": "critical",
+        "message": "CRITICAL drift on group 'Male': PSI=4.048 (baseline 31.94% \u2192 current 0.00%)",
+        "group": "Male"
+      },
+      {
+        "timestamp": "2026-06-28T13:01:37.241749+00:00",
+        "level": "warning",
+        "message": "Demographic-parity gap exceeded threshold: gap=0.600 > threshold=0.100",
+        "group": "all"
+      }
+    ]
   }
 }

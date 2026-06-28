@@ -67,6 +67,18 @@ export const ackModule = async (jobId) => {
   return res.json();
 };
 
+/**
+ * List in-memory audit jobs (most recent first) — used to populate the
+ * job-picker dropdown on the Monitoring page instead of pasting a job ID.
+ * @param {string} [status] optional filter, e.g. "done"
+ * @returns {Promise<{ jobs: Array<{job_id, status, created_at, dataset_name, target, sensitive, columns, has_fairness}> }>}
+ */
+export const listAuditJobs = async (status) => {
+  const qs  = status ? `?status=${encodeURIComponent(status)}` : "";
+  const res = await fetch(`${BASE}/audit/list${qs}`);
+  return res.json();
+};
+
 /** Returns the URL to download the full HTML report. */
 export const getReportUrl = (jobId) => `${BASE}/audit/report/${jobId}`;
 
